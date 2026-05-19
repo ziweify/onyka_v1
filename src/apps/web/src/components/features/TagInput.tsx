@@ -9,9 +9,10 @@ interface TagInputProps {
   onAddTag: (tagId: string) => void
   onRemoveTag: (tagId: string) => void
   onCreateTag?: (name: string) => Promise<Tag>
+  disabled?: boolean
 }
 
-export function TagInput({ selectedTags, onAddTag, onRemoveTag, onCreateTag }: TagInputProps) {
+export function TagInput({ selectedTags, onAddTag, onRemoveTag, onCreateTag, disabled = false }: TagInputProps) {
   const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -101,6 +102,26 @@ export function TagInput({ selectedTags, onAddTag, onRemoveTag, onCreateTag }: T
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  if (disabled) {
+    return (
+      <div className="flex items-center gap-1.5 px-2 h-[32px] overflow-x-auto overflow-y-hidden scrollbar-none opacity-80">
+        <IoPricetagOutline className="w-3.5 h-3.5 text-[var(--color-text-tertiary)] flex-shrink-0" />
+        {selectedTags.length === 0 ? (
+          <span className="text-sm text-[var(--color-text-tertiary)]">—</span>
+        ) : (
+          selectedTags.map((tag) => (
+            <span
+              key={tag.id}
+              className="flex-shrink-0 px-2 py-0.5 text-sm rounded bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+            >
+              {tag.name}
+            </span>
+          ))
+        )}
+      </div>
+    )
+  }
 
   return (
     <div ref={containerRef} className="relative">

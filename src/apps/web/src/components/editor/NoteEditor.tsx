@@ -16,6 +16,7 @@ import {
   IoDownloadOutline,
   IoLockClosed,
   IoLockOpen,
+  IoPencilOutline,
 } from 'react-icons/io5'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
 import { useAutoSave } from '@/hooks'
@@ -31,6 +32,7 @@ import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
 import { useThemeStore, EDITOR_FONT_SIZES, EDITOR_FONT_FAMILIES } from '@/stores/theme'
 import { useAuthStore } from '@/stores/auth'
+import { useSharesStore } from '@/stores/shares'
 import { useCommentsStore } from '@/stores/comments'
 import { usePagesStore } from '@/stores/pages'
 import { WordCounter, countWords } from './WordCounter'
@@ -102,7 +104,11 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const { fetchFolderTree } = useFoldersStore()
   const { focusMode, toggleFocusMode, editorFontSize, setEditorFontSize, editorFontFamily, setEditorFontFamily } = useThemeStore()
   const { user } = useAuthStore()
+  const { sharedWithMe } = useSharesStore()
   const isOwner = user?.id === note.ownerId
+  const sharedNote = sharedWithMe.find((s) => s.id === note.id)
+  const canEdit = isOwner || (sharedNote ? sharedNote.permission !== 'read' : false)
+  const [isEditMode, setIsEditMode] = useState(false)
   const { countsByNote, fetchCount } = useCommentsStore()
   const commentCount = countsByNote[note.id] || 0
 
@@ -124,6 +130,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const pages = pagesForNote || []
   const activePageId = activePageByNote[note.id] || ''
   const activePage = getActivePage(note.id)
+  const isPageLocked = activePage?.isLocked ?? false
+  const isReadOnly = !isEditMode || isPageLocked || !canEdit
 
   const [syncedPageState, setSyncedPageState] = useState<{ noteId: string; pageId: string | null }>({
     noteId: note.id,
@@ -229,6 +237,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const typographyMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    setIsEditMode(false)
     cancelAutoSave()
     setLocalTags(note.tags)
     setLastModifiedAt(new Date(note.updatedAt))
@@ -237,7 +246,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     savingContentRef.current = null
     lastSavedRef.current = { title: note.title, content: note.content }
     if (wordCountTimerRef.current) clearTimeout(wordCountTimerRef.current)
-    if (breakpoint === 'mobile' && !note.title) {
+    if (breakpoint === 'mobile' && !note.title && isEditMode) {
       requestAnimationFrame(() => titleInputRef.current?.focus())
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -324,10 +333,23 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     }
   }, [onUpdate, activePage, updatePage])
 
-  const { status, triggerSave, cancel: cancelAutoSave } = useAutoSave({
+  const { status, triggerSave, saveNow, cancel: cancelAutoSave } = useAutoSave({
     onSave: handleSave,
     delay: 1200,
   })
+
+  const handleEnterEditMode = () => {
+    if (!canEdit || isPageLocked) return
+    setIsEditMode(true)
+  }
+
+  const handleExitEditMode = async () => {
+    if (pendingUpdatesRef.current && Object.keys(pendingUpdatesRef.current).length > 0) {
+      await saveNow()
+    }
+    isEditingRef.current = false
+    setIsEditMode(false)
+  }
 
   const handleTitleChange = (title: string) => {
     setLocalTitle(title)
@@ -474,6 +496,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     }
     cancelAutoSave()
     isEditingRef.current = false
+    setIsEditMode(false)
     setActivePage(note.id, pageId)
   }
 
@@ -492,7 +515,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
               ref={titleInputRef}
               type="text"
               placeholder={t('editor.untitled')}
-              className="w-full text-2xl md:text-[26px] font-bold bg-transparent text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]/30 focus:outline-none tracking-[-0.025em] py-0.5 pl-8 md:pl-0 leading-tight"
+              readOnly={isReadOnly}
+              className={`w-full text-2xl md:text-[26px] font-bold bg-transparent text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)]/30 focus:outline-none tracking-[-0.025em] py-0.5 pl-8 md:pl-0 leading-tight ${isReadOnly ? 'cursor-default' : ''}`}
               value={localTitle}
               onChange={(e) => handleTitleChange(e.target.value)}
             />
@@ -518,13 +542,37 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           </div>
 
           <div className="flex items-center gap-0.5 flex-shrink-0">
-            <div
-              className={`flex items-center gap-1 px-2 text-[11px] font-medium transition-all duration-300 ${statusConfig.className}`}
-            >
-              {statusConfig.icon}
-            </div>
+            {canEdit && !isPageLocked && (
+              isEditMode ? (
+                <button
+                  type="button"
+                  onClick={() => void handleExitEditMode()}
+                  className="h-8 px-3 rounded-lg text-[12px] font-medium bg-[var(--color-accent)] text-white hover:opacity-90 transition-opacity"
+                >
+                  {t('editor.done_editing')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleEnterEditMode}
+                  className="h-8 px-3 rounded-lg text-[12px] font-medium flex items-center gap-1.5 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] transition-colors"
+                >
+                  <IoPencilOutline className="w-3.5 h-3.5" />
+                  {t('editor.edit')}
+                </button>
+              )
+            )}
 
-            {!focusMode && (
+            {isEditMode && (
+              <div
+                className={`flex items-center gap-1 px-2 text-[11px] font-medium transition-all duration-300 ${statusConfig.className}`}
+              >
+                {statusConfig.icon}
+                <span className="hidden sm:inline">{t(statusConfig.textKey)}</span>
+              </div>
+            )}
+
+            {!focusMode && isEditMode && (
               <div className="relative" ref={typographyMenuRef}>
                 {!isCompact && (
                   <button
@@ -829,10 +877,22 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         />
       )}
 
-      {activePage?.isLocked && (
+      {!canEdit && (
+        <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] text-[12px]">
+          <IoLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
+          <span className="font-medium">{t('editor.read_only_share')}</span>
+        </div>
+      )}
+      {canEdit && isPageLocked && (
         <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-accent)]/8 border border-[var(--color-accent)]/20 text-[var(--color-accent)] text-[12px]">
           <IoLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="font-medium">{t('pages.locked_banner')}</span>
+        </div>
+      )}
+      {canEdit && !isPageLocked && !isEditMode && (
+        <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/8 border border-blue-500/20 text-[var(--color-text-secondary)] text-[12px]">
+          <IoPencilOutline className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
+          <span>{t('editor.read_mode_banner')}</span>
         </div>
       )}
 
@@ -842,7 +902,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           content={localContent}
           onChange={handleContentChange}
           placeholder={t('editor.placeholder')}
-          readOnly={activePage?.isLocked ?? false}
+          readOnly={isReadOnly}
         />
       </div>
 
@@ -853,6 +913,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             onAddTag={handleAddTag}
             onRemoveTag={handleRemoveTag}
             onCreateTag={handleCreateTag}
+            disabled={isReadOnly}
           />
         </div>
         {!focusMode && (

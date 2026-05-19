@@ -1,0 +1,21 @@
+# Onyka — 仅使用本地源码构建，不拉取远程镜像
+# 源码目录: ./src  （可 git pull / 直接改代码后 rebuild）
+
+services:
+  onyka:
+    build:
+      context: ./src
+      dockerfile: docker/Dockerfile
+    image: onyka:local
+    pull_policy: never
+    container_name: onyka
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./host.env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: /app/data/onyka.db
+    volumes:
+      - /www/wwwroot/onyka/data:/app/data

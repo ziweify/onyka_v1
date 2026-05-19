@@ -102,6 +102,16 @@
     "text_color": "Text color",
     "add_link": "Add link",
     "open_link": "Open link",
+    "note_link_tab": "Note",
+    "note_link_search": "Search notes…",
+    "note_link_empty": "No notes found",
+    "copy_heading_link": "Copy heading link",
+    "toc_title": "Outline",
+    "markdown_mode": "Markdown source",
+    "rich_mode": "Rich text",
+    "markdown_apply": "Apply & return",
+    "markdown_placeholder": "Edit Markdown here…",
+    "markdown_invalid": "Could not parse Markdown",
     "focus_mode": "Focus mode",
     "exit_focus": "Exit focus mode",
     "edit": "Edit",
@@ -277,6 +287,12 @@
     },
     "download": "Download",
     "download_zip": "Download (.zip)"
+  },
+  "import": {
+    "title": "Import note",
+    "description": "Create a new note from a Markdown or HTML file.",
+    "choose_file": "Choose file",
+    "error": "Import failed. Check the file format and try again."
   },
   "settings": {
     "title": "Settings",

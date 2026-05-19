@@ -57,6 +57,7 @@
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.13.0",
     "socket.io-client": "^4.8.3",
+    "turndown": "^7.2.2",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -64,6 +65,7 @@
     "@types/diff": "^8.0.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@types/turndown": "^5.0.5",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",

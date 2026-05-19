@@ -313,6 +313,9 @@ importers:
       socket.io-client:
         specifier: ^4.8.3
         version: 4.8.3
+      turndown:
+        specifier: ^7.2.2
+        version: 7.2.2
       zustand:
         specifier: ^5.0.2
         version: 5.0.9(@types/react@19.2.7)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
@@ -329,6 +332,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.2
         version: 19.2.3(@types/react@19.2.7)
+      '@types/turndown':
+        specifier: ^5.0.5
+        version: 5.0.6
       '@vitejs/plugin-react':
         specifier: ^4.3.4
         version: 4.7.0(vite@6.4.1(@types/node@22.19.3)(jiti@1.21.7)(tsx@4.21.0)(yaml@2.8.2))

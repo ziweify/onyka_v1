@@ -15,13 +15,14 @@ import {
   IoPricetagOutline,
   IoShieldOutline,
   IoDocumentTextOutline,
+  IoCloudUploadOutline,
 } from 'react-icons/io5'
 import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, pointerWithin, useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { ThemeToggle, AccentColorPicker, SparkIcon } from '@/components/ui'
-import { ConfirmDialog, SettingsModal, ProfileEditModal } from '@/components/features'
+import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog } from '@/components/features'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
 import { useTagsStore } from '@/stores/tags'
@@ -218,6 +219,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   }, [showNewNoteInput])
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showImportDialog, setShowImportDialog] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
 
   const [deleteDialog, setDeleteDialog] = useState<{
@@ -765,6 +767,15 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             title={t('sidebar.new_folder')}
           >
             <IoFolderOpenOutline className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowImportDialog(true)}
+            className="h-[36px] w-[36px] flex-shrink-0 flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] border floating-panel-interactive"
+            title={t('import.title')}
+          >
+            <IoCloudUploadOutline className="w-4 h-4" />
           </button>
 
           <button onClick={handleShowNewNoteInput} className="fold-button group flex-1">
@@ -1587,6 +1598,14 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
       />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <ProfileEditModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
+      <ImportDialog
+        isOpen={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onImported={(noteId, title) => {
+          handleSelectNote(noteId, undefined, title)
+          fetchFolderTree()
+        }}
+      />
     </>
   )
 }

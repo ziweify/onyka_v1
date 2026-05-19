@@ -20,6 +20,11 @@ import { CustomImage } from './extensions/CustomImage'
 import { Columns, Column, type ColumnsLayout } from './extensions/Columns'
 import { MarkdownTableInput } from './extensions/MarkdownTableInput'
 import { CodeBlockCopy } from './extensions/CodeBlockCopy'
+import { HeadingWithAnchor } from './extensions/HeadingWithAnchor'
+import { EditorLink } from './extensions/EditorLink'
+import { cleanMarkdownHtml, markdownToHtml } from '@/utils/htmlMarkdown'
+import { isAllowedLinkHref, isInPageAnchor, parseNoteLink } from '@/utils/noteLinks'
+import type { Editor } from '@tiptap/react'
 import { uploadsApi } from '@/services/api'
 import { SLASH_MENU_ITEMS, type SlashMenuItem } from './editorConstants'
 
@@ -155,21 +160,6 @@ function looksLikeMarkdown(text: string): boolean {
   return mdScore >= 2
 }
 
-/** Clean marked HTML for TipTap */
-function cleanMarkdownHtml(html: string): string {
-  let cleaned = html
-    .replace(/\s*<\/?thead>\s*/g, '')
-    .replace(/\s*<\/?tbody>\s*/g, '')
-    .replace(/<h([1-6])\s+id="[^"]*">/g, '<h$1>')
-    .replace(/<p>\s*<\/p>/g, '')
-    .replace(/<code([^>]*)>([\s\S]*?)\n<\/code>/g, '<code$1>$2</code>')
-
-  // Wrap bare cell content in <p> (TipTap needs block nodes)
-  cleaned = cleaned.replace(/<(td|th)>((?:(?!<\/?(?:p|h[1-6]|ul|ol|blockquote|pre)[ >])[\s\S])*?)<\/\1>/g,
-    '<$1><p>$2</p></$1>')
-
-  return cleaned
-}
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { SlashMenu } from './SlashMenu'
 import { ImageToolbar, type ImageNodeState } from './ImageToolbar'
@@ -181,9 +171,20 @@ interface FluidEditorProps {
   onChange: (content: string) => void
   placeholder?: string
   readOnly?: boolean
+  noteId?: string
+  onOpenNote?: (noteId: string, hash?: string) => void
+  onEditorReady?: (editor: Editor) => void
 }
 
-export const FluidEditor = memo(function FluidEditor({ content, onChange, placeholder = 'Start writing...', readOnly = false }: FluidEditorProps) {
+export const FluidEditor = memo(function FluidEditor({
+  content,
+  onChange,
+  placeholder = 'Start writing...',
+  readOnly = false,
+  noteId,
+  onOpenNote,
+  onEditorReady,
+}: FluidEditorProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [showSlashMenu, setShowSlashMenu] = useState(false)
@@ -274,16 +275,10 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
-        link: {
-          openOnClick: false,
-          validate: (href) => /^https?:\/\//i.test(href) || href.startsWith('/') || href.startsWith('mailto:') || href.startsWith('tel:'),
-          HTMLAttributes: {
-            class: 'text-[var(--color-accent)] underline decoration-[var(--color-accent)]/30 hover:decoration-[var(--color-accent)] transition-colors cursor-pointer',
-            target: '_blank',
-            rel: 'noopener noreferrer nofollow',
-          },
-        },
+        link: false,
       }),
+      HeadingWithAnchor,
+      EditorLink,
       CodeBlockCopy,
       Placeholder.configure({
         placeholder,
@@ -348,17 +343,32 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
         })
         return texts.join('').replace(/\n{3,}/g, '\n\n').trimEnd()
       },
-      handleClick: (_view, _pos, event) => {
+      handleClick: (view, _pos, event) => {
         const target = event.target as HTMLElement | null
         const linkEl = target?.closest('a') as HTMLAnchorElement | null
         if (!linkEl) return false
 
         const href = linkEl.getAttribute('href')
-        if (!href) return false
-        if (!/^(https?:|mailto:|tel:|\/)/i.test(href)) return false
+        if (!href || !isAllowedLinkHref(href)) return false
 
         event.preventDefault()
-        window.open(href, '_blank', 'noopener,noreferrer')
+
+        const noteLink = parseNoteLink(href)
+        if (noteLink) {
+          onOpenNote?.(noteLink.noteId, noteLink.hash)
+          return true
+        }
+
+        if (isInPageAnchor(href)) {
+          const id = decodeURIComponent(href.slice(1))
+          const root = view.dom.closest('.editor-scroll-container') ?? view.dom
+          root.querySelector(`#${CSS.escape(id)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          return true
+        }
+
+        if (/^(https?:|mailto:|tel:|\/)/i.test(href)) {
+          window.open(href, '_blank', 'noopener,noreferrer')
+        }
         return true
       },
       // Mobile/tablet: virtual keyboards fire handleTextInput, not handleKeyDown for '/'
@@ -544,8 +554,7 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
         const plainText = clipboardData.getData('text/plain')
         if (!html && plainText && looksLikeMarkdown(plainText)) {
           event.preventDefault()
-          const rawHtml = marked.parse(plainText, { async: false }) as string
-          const convertedHtml = cleanMarkdownHtml(rawHtml)
+          const convertedHtml = markdownToHtml(plainText)
           editorRef.current?.commands.insertContent(convertedHtml)
           return true
         }
@@ -711,6 +720,10 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
 
   // Keep ref in sync for deferred getHTML() inside debounce
   editorRef.current = editor
+
+  useEffect(() => {
+    if (editor) onEditorReady?.(editor)
+  }, [editor, onEditorReady])
 
   useEffect(() => {
     if (!editor) return
@@ -966,7 +979,7 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
         />
       )}
 
-      <EditorBubbleMenu editor={editor} />
+      <EditorBubbleMenu editor={editor} noteId={noteId} />
 
       {showSlashMenu && (
         <SlashMenu

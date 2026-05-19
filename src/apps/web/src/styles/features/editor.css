@@ -150,6 +150,22 @@
   margin: 0.5em 0;
 }
 
+.fluid-editor-content h1,
+.fluid-editor-content h2,
+.fluid-editor-content h3 {
+  scroll-margin-top: 5rem;
+}
+
+.fluid-editor-content h1[id],
+.fluid-editor-content h2[id],
+.fluid-editor-content h3[id] {
+  position: relative;
+}
+
+.fluid-editor-content a.editor-link-internal {
+  text-decoration-style: dashed;
+}
+
 .fluid-editor-content h1 {
   font-size: 1.75em;
   font-weight: 800;

@@ -2,6 +2,7 @@ import { Router, type Request, type Router as RouterType } from 'express'
 import { z } from 'zod'
 import rateLimit from 'express-rate-limit'
 import { notesService } from '../services/notes.service.js'
+import { importService } from '../services/import.service.js'
 import { authenticate } from '../middleware/auth.js'
 
 const router: RouterType = Router()
@@ -122,6 +123,23 @@ router.get('/', async (req, res, next) => {
 
     const notes = await notesService.list(req.userId!, filters)
     res.json({ notes })
+  } catch (error) {
+    next(error)
+  }
+})
+
+const importNoteSchema = z.object({
+  format: z.enum(['md', 'html']),
+  content: z.string().min(1).max(MAX_CONTENT_LENGTH),
+  title: z.string().max(500).optional(),
+  folderId: z.string().nullable().optional(),
+})
+
+router.post('/import', createNoteRateLimit, async (req, res, next) => {
+  try {
+    const input = importNoteSchema.parse(req.body)
+    const note = await importService.importNote(req.userId!, input)
+    res.status(201).json({ note })
   } catch (error) {
     next(error)
   }

@@ -102,6 +102,16 @@
     "text_color": "Couleur du texte",
     "add_link": "Ajouter un lien",
     "open_link": "Ouvrir le lien",
+    "note_link_tab": "Note",
+    "note_link_search": "Rechercher une note…",
+    "note_link_empty": "Aucune note trouvée",
+    "copy_heading_link": "Copier le lien de section",
+    "toc_title": "Sommaire",
+    "markdown_mode": "Source Markdown",
+    "rich_mode": "Éditeur riche",
+    "markdown_apply": "Appliquer",
+    "markdown_placeholder": "Modifier le Markdown ici…",
+    "markdown_invalid": "Markdown invalide",
     "focus_mode": "Mode concentration",
     "exit_focus": "Quitter le mode concentration",
     "edit": "Modifier",
@@ -277,6 +287,12 @@
     },
     "download": "Télécharger",
     "download_zip": "Télécharger (.zip)"
+  },
+  "import": {
+    "title": "Importer une note",
+    "description": "Créer une note à partir d’un fichier Markdown ou HTML.",
+    "choose_file": "Choisir un fichier",
+    "error": "Échec de l’import. Vérifiez le format du fichier."
   },
   "settings": {
     "title": "Paramètres",

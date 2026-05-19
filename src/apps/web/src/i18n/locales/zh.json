@@ -102,6 +102,16 @@
     "text_color": "文字颜色",
     "add_link": "插入链接",
     "open_link": "打开链接",
+    "note_link_tab": "笔记",
+    "note_link_search": "搜索笔记…",
+    "note_link_empty": "未找到笔记",
+    "copy_heading_link": "复制段落链接",
+    "toc_title": "目录",
+    "markdown_mode": "Markdown 源码",
+    "rich_mode": "富文本编辑",
+    "markdown_apply": "应用并返回",
+    "markdown_placeholder": "在此编辑 Markdown…",
+    "markdown_invalid": "无法解析 Markdown",
     "focus_mode": "专注模式",
     "exit_focus": "退出专注模式",
     "edit": "编辑",
@@ -277,6 +287,12 @@
     },
     "download": "下载",
     "download_zip": "下载（.zip）"
+  },
+  "import": {
+    "title": "导入笔记",
+    "description": "从 Markdown 或 HTML 文件创建新笔记。",
+    "choose_file": "选择文件",
+    "error": "导入失败，请检查文件格式后重试。"
   },
   "settings": {
     "title": "设置",

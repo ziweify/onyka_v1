@@ -17,13 +17,18 @@ import {
   IoLockClosed,
   IoLockOpen,
   IoPencilOutline,
+  IoLogoMarkdown,
 } from 'react-icons/io5'
+import type { Editor } from '@tiptap/react'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
 import { useAutoSave } from '@/hooks'
 import { useBreakpoint } from '@/hooks/useIsMobile'
 import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
+import { MarkdownSourceEditor } from './MarkdownSourceEditor'
+import { TableOfContents } from './TableOfContents'
 import { PageTabs } from './PageTabs'
+import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
 import { ShareDialog, TagInput, NoteComments, ExportDialog, VersionHistoryDrawer } from '@/components/features'
 import { ThemeToggle } from '@/components/ui'
 import { notesApi, sharesApi, pagesApi } from '@/services/api'
@@ -98,7 +103,11 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [showCommentsPanel, setShowCommentsPanel] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [markdownMode, setMarkdownMode] = useState(false)
+  const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
+  const pendingAnchorRef = useRef<string | null>(null)
+  const { openNote } = useWorkspaceTabsStore()
   const [noteInfoExpanded, setNoteInfoExpanded] = useState(false)
   const [collaboratorCount, setCollaboratorCount] = useState(0)
   const optionsMenuRef = useRef<HTMLDivElement>(null)
@@ -567,6 +576,35 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     void fetchFolderTree()
   }, [note.id, fetchFolderTree])
 
+  const handleOpenInternalNote = useCallback(
+    (targetNoteId: string, hash?: string) => {
+      if (targetNoteId === note.id) {
+        if (hash) {
+          pendingAnchorRef.current = hash
+          const root = document.querySelector('.editor-scroll-container')
+          root?.querySelector(`#${CSS.escape(hash)}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+        return
+      }
+      pendingAnchorRef.current = hash ?? null
+      openNote(targetNoteId)
+    },
+    [note.id, openNote]
+  )
+
+  useEffect(() => {
+    const hash = pendingAnchorRef.current
+    if (!hash || !editorInstance) return
+    pendingAnchorRef.current = null
+    const timer = setTimeout(() => {
+      document
+        .querySelector('.editor-scroll-container')
+        ?.querySelector(`#${CSS.escape(hash)}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [editorInstance, localContent, note.id])
+
   const structurePath = useMemo(
     () =>
       buildNoteStructurePath({
@@ -631,13 +669,26 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {canEdit && !isPageLocked && (
               isEditMode ? (
-                <button
-                  type="button"
-                  onClick={() => void handleExitEditMode()}
-                  className="h-8 px-3 rounded-lg text-[12px] font-medium bg-[var(--color-accent)] text-white hover:opacity-90 transition-opacity"
-                >
-                  {t('editor.done_editing')}
-                </button>
+                <>
+                  {!isPageLocked && (
+                    <button
+                      type="button"
+                      onClick={() => setMarkdownMode((m) => !m)}
+                      className="h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)] transition-colors"
+                      title={markdownMode ? t('editor.rich_mode') : t('editor.markdown_mode')}
+                    >
+                      <IoLogoMarkdown className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{markdownMode ? 'MD' : 'MD'}</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => void handleExitEditMode()}
+                    className="h-8 px-3 rounded-lg text-[12px] font-medium bg-[var(--color-accent)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    {t('editor.done_editing')}
+                  </button>
+                </>
               ) : (
                 <div className="flex items-center gap-2 max-w-[min(100%,20rem)]">
                   <button
@@ -926,6 +977,18 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                       <IoTimeOutline className="w-4 h-4" />
                       <span>{t('versions.title')}</span>
                     </button>
+                    {canEdit && isEditMode && !isPageLocked && (
+                      <button
+                        onClick={() => {
+                          setShowOptionsMenu(false)
+                          setMarkdownMode((m) => !m)
+                        }}
+                        className="w-full flex items-center gap-2 px-3 h-8 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                      >
+                        <IoLogoMarkdown className="w-4 h-4" />
+                        <span>{markdownMode ? t('editor.rich_mode') : t('editor.markdown_mode')}</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setShowOptionsMenu(false)
@@ -994,18 +1057,36 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           <span className="font-medium">{t('pages.locked_banner')}</span>
         </div>
       )}
-      <div
-        className={`editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pb-4 ${
-          isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
-        }`}
-      >
-        <FluidEditor
-          key={`${note.id}-${activePageId}`}
-          content={localContent}
-          onChange={handleContentChange}
-          placeholder={t('editor.placeholder')}
-          readOnly={isReadOnly}
-        />
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        {!markdownMode && !isReadOnly && <TableOfContents editor={editorInstance} />}
+        <div
+          className={`editor-scroll-container editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pb-4 ${
+            isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
+          }`}
+        >
+          {markdownMode ? (
+            <MarkdownSourceEditor
+              htmlContent={localContent}
+              readOnly={isReadOnly}
+              onApply={(html) => {
+                handleContentChange(html)
+                setMarkdownMode(false)
+              }}
+              onCancel={() => setMarkdownMode(false)}
+            />
+          ) : (
+            <FluidEditor
+              key={`${note.id}-${activePageId}`}
+              content={localContent}
+              onChange={handleContentChange}
+              placeholder={t('editor.placeholder')}
+              readOnly={isReadOnly}
+              noteId={note.id}
+              onOpenNote={handleOpenInternalNote}
+              onEditorReady={setEditorInstance}
+            />
+          )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3 px-4 md:px-8 py-1.5">

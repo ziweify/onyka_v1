@@ -347,6 +347,17 @@ export const notesApi = {
       body: JSON.stringify(data),
     }),
 
+  import: (data: {
+    format: 'md' | 'html'
+    content: string
+    title?: string
+    folderId?: string | null
+  }) =>
+    request<{ note: Note }>('/notes/import', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   update: (id: string, data: NoteUpdateInput) =>
     request<{ note: Note }>(`/notes/${id}`, {
       method: 'PATCH',

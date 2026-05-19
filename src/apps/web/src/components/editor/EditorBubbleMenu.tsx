@@ -11,19 +11,28 @@ import {
   IoChatbubbleOutline,
   IoCloseOutline,
   IoOpenOutline,
+  IoDocumentTextOutline,
+  IoLinkSharp,
 } from 'react-icons/io5'
+import { NoteLinkPicker } from './NoteLinkPicker'
+import { parseNoteLink, isInPageAnchor, isAllowedLinkHref } from '@/utils/noteLinks'
+import { slugifyHeading } from '@/utils/slugify'
 import { ToolbarButton, ToolbarDivider } from './ToolbarButton'
 import { COLORS, HIGHLIGHT_COLORS, AlignLeftIcon, AlignCenterIcon, AlignRightIcon } from './editorConstants'
 import { useIsMobile } from '../../hooks/useIsMobile'
 
 interface EditorBubbleMenuProps {
   editor: Editor
+  noteId?: string
 }
 
-export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
+type LinkInputMode = 'url' | 'note'
+
+export function EditorBubbleMenu({ editor, noteId }: EditorBubbleMenuProps) {
   const { t } = useTranslation()
   const isMobile = useIsMobile()
   const [showLinkInput, setShowLinkInput] = useState(false)
+  const [linkInputMode, setLinkInputMode] = useState<LinkInputMode>('url')
   const [linkUrl, setLinkUrl] = useState('')
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showHighlightPicker, setShowHighlightPicker] = useState(false)
@@ -39,21 +48,40 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
   const setLink = useCallback(() => {
     if (linkUrl === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run()
-    } else {
+    } else if (isAllowedLinkHref(linkUrl)) {
       editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
     }
     setShowLinkInput(false)
     setLinkUrl('')
+    setLinkInputMode('url')
   }, [editor, linkUrl])
 
   const openLinkInput = useCallback(() => {
     const previousUrl = editor.getAttributes('link').href || ''
     setLinkUrl(previousUrl)
+    setLinkInputMode(parseNoteLink(previousUrl) ? 'note' : 'url')
     setShowLinkInput(true)
+  }, [editor])
+
+  const copyHeadingLink = useCallback(() => {
+    if (!editor.isActive('heading')) return
+    const attrs = editor.getAttributes('heading')
+    let id = attrs.id as string | undefined
+    if (!id) {
+      const text = editor.state.doc.textBetween(
+        editor.state.selection.$from.start(),
+        editor.state.selection.$from.end(),
+        ''
+      )
+      id = slugifyHeading(text)
+    }
+    const href = `#${id}`
+    void navigator.clipboard.writeText(href)
   }, [editor])
 
   const openCurrentLink = useCallback(() => {
     if (!linkUrl) return
+    if (parseNoteLink(linkUrl) || isInPageAnchor(linkUrl)) return
     if (!/^(https?:|mailto:|tel:|\/)/i.test(linkUrl)) return
     window.open(linkUrl, '_blank', 'noopener,noreferrer')
   }, [linkUrl])
@@ -116,34 +144,69 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
       className={`flex items-center gap-0.5 px-1.5 py-1 border rounded-2xl animate-scale-in z-50 floating-panel${isMobile ? ' bubble-menu-mobile' : ''}`}
     >
       {showLinkInput ? (
-        <div className="flex items-center gap-2">
-          <input
-            type="url"
-            placeholder="https://..."
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && setLink()}
-            className={`px-2 py-1 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent)] ${isMobile ? 'w-36' : 'w-48'}`}
-            autoFocus
-          />
-          {linkUrl && /^(https?:|mailto:|tel:|\/)/i.test(linkUrl) && (
+        <div className="flex flex-col gap-2 p-1 max-w-xs">
+          <div className="flex gap-1">
             <button
-              onClick={openCurrentLink}
-              className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
-              title={t('editor.open_link')}
+              type="button"
+              onClick={() => setLinkInputMode('url')}
+              className={`px-2 py-0.5 text-[10px] rounded-md ${linkInputMode === 'url' ? 'bg-[var(--color-accent)] text-white' : 'text-[var(--color-text-tertiary)]'}`}
             >
-              <IoOpenOutline className="w-4 h-4" />
+              URL
             </button>
+            <button
+              type="button"
+              onClick={() => setLinkInputMode('note')}
+              className={`px-2 py-0.5 text-[10px] rounded-md ${linkInputMode === 'note' ? 'bg-[var(--color-accent)] text-white' : 'text-[var(--color-text-tertiary)]'}`}
+            >
+              {t('editor.note_link_tab')}
+            </button>
+          </div>
+          {linkInputMode === 'note' ? (
+            <NoteLinkPicker
+              excludeNoteId={noteId}
+              onSelect={(href) => {
+                editor.chain().focus().extendMarkRange('link').setLink({ href }).run()
+                setShowLinkInput(false)
+              }}
+              onCancel={() => setShowLinkInput(false)}
+            />
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="text"
+                placeholder="https://... or #heading"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && setLink()}
+                className={`px-2 py-1 text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent)] ${isMobile ? 'w-36' : 'w-48'}`}
+                autoFocus
+              />
+              {linkUrl && /^(https?:|mailto:|tel:|\/)/i.test(linkUrl) && (
+                <button
+                  type="button"
+                  onClick={openCurrentLink}
+                  className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors"
+                  title={t('editor.open_link')}
+                >
+                  <IoOpenOutline className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={setLink}
+                className="px-2 py-1 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors"
+              >
+                {t('common.save')}
+              </button>
+            </div>
           )}
           <button
-            onClick={setLink}
-            className="px-2 py-1 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] transition-colors"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => setShowLinkInput(false)}
-            className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+            type="button"
+            onClick={() => {
+              setShowLinkInput(false)
+              setLinkInputMode('url')
+            }}
+            className="p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] self-end"
           >
             <IoCloseOutline className="w-4 h-4" />
           </button>
@@ -271,6 +334,20 @@ export function EditorBubbleMenu({ editor }: EditorBubbleMenuProps) {
           >
             <IoLinkOutline className="w-4 h-4" />
           </ToolbarButton>
+          <ToolbarButton
+            onClick={() => {
+              setLinkInputMode('note')
+              setShowLinkInput(true)
+            }}
+            title={t('editor.note_link_tab')}
+          >
+            <IoDocumentTextOutline className="w-4 h-4" />
+          </ToolbarButton>
+          {editor.isActive('heading') && (
+            <ToolbarButton onClick={copyHeadingLink} title={t('editor.copy_heading_link')}>
+              <IoLinkSharp className="w-4 h-4" />
+            </ToolbarButton>
+          )}
 
           <ToolbarDivider />
 

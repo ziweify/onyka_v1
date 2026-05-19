@@ -915,7 +915,7 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
   }
 
   return (
-    <div ref={containerRef} className="fluid-editor relative smooth-caret">
+    <div ref={containerRef} className="fluid-editor relative smooth-caret" data-readonly={readOnly ? 'true' : 'false'}>
       <input
         ref={fileInputRef}
         type="file"
@@ -979,7 +979,7 @@ export const FluidEditor = memo(function FluidEditor({ content, onChange, placeh
         />
       )}
 
-      <EditorContent editor={editor} className="h-full" />
+      <EditorContent editor={editor} />
     </div>
   )
 })

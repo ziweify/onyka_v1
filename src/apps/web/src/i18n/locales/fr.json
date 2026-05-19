@@ -107,6 +107,7 @@
     "edit": "Modifier",
     "done_editing": "Terminer",
     "read_mode_banner": "Mode lecture — cliquez sur Modifier pour éditer",
+    "read_mode_hint": "Mode lecture",
     "read_only_share": "Lecture seule — pas de permission d'édition",
     "focus_width": "Largeur de l'éditeur",
     "words": "{{count}} mots",

@@ -107,6 +107,7 @@
     "edit": "Edit",
     "done_editing": "Done",
     "read_mode_banner": "Read mode — click Edit to make changes",
+    "read_mode_hint": "Read mode",
     "read_only_share": "Read-only — you do not have edit permission",
     "focus_width": "Editor width",
     "words": "{{count}} words",

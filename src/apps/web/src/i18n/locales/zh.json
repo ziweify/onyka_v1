@@ -107,6 +107,7 @@
     "edit": "编辑",
     "done_editing": "完成",
     "read_mode_banner": "阅读模式 — 点击「编辑」后可修改内容",
+    "read_mode_hint": "阅读模式",
     "read_only_share": "只读 — 协作者未授予编辑权限",
     "focus_width": "编辑器宽度",
     "words": "{{count}} 词",

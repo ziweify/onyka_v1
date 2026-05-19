@@ -535,7 +535,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
 
   return (
     <div className="flex flex-col h-full relative z-10">
-      <header className="relative z-20 px-4 md:px-8 pt-4 pb-2 bg-[var(--color-bg-secondary)]">
+      <header className="relative z-20 px-4 md:px-8 pt-3 pb-1.5 bg-[var(--color-bg-secondary)]">
         <div className={`flex items-end justify-between ${isCompact ? 'gap-2' : 'gap-4'}`}>
           <div className="flex-1 min-w-0">
             <input
@@ -584,14 +584,22 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                   {t('editor.done_editing')}
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={handleEnterEditMode}
-                  className="h-8 px-3 rounded-lg text-[12px] font-medium flex items-center gap-1.5 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] transition-colors"
-                >
-                  <IoPencilOutline className="w-3.5 h-3.5" />
-                  {t('editor.edit')}
-                </button>
+                <div className="flex items-center gap-2 max-w-[min(100%,20rem)]">
+                  <button
+                    type="button"
+                    onClick={handleEnterEditMode}
+                    className="h-8 px-3 rounded-lg text-[12px] font-medium flex items-center gap-1.5 shrink-0 bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] transition-colors"
+                    title={t('editor.read_mode_banner')}
+                  >
+                    <IoPencilOutline className="w-3.5 h-3.5" />
+                    {t('editor.edit')}
+                  </button>
+                  {!isCompact && (
+                    <span className="hidden lg:inline text-[10px] leading-tight text-[var(--color-text-tertiary)] truncate">
+                      {t('editor.read_mode_hint')}
+                    </span>
+                  )}
+                </div>
               )
             )}
 
@@ -910,25 +918,22 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
       )}
 
       {!canEdit && (
-        <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] text-[12px]">
+        <div className="mx-4 md:mx-8 mt-1 flex items-center gap-2 px-3 py-1 rounded-md bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] text-[11px]">
           <IoLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="font-medium">{t('editor.read_only_share')}</span>
         </div>
       )}
       {canEdit && isPageLocked && (
-        <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-[var(--color-accent)]/8 border border-[var(--color-accent)]/20 text-[var(--color-accent)] text-[12px]">
+        <div className="mx-4 md:mx-8 mt-1 flex items-center gap-2 px-3 py-1 rounded-md bg-[var(--color-accent)]/8 border border-[var(--color-accent)]/20 text-[var(--color-accent)] text-[11px]">
           <IoLockClosed className="w-3.5 h-3.5 flex-shrink-0" />
           <span className="font-medium">{t('pages.locked_banner')}</span>
         </div>
       )}
-      {canEdit && !isPageLocked && !isEditMode && (
-        <div className="mx-4 md:mx-8 mt-2 flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/8 border border-blue-500/20 text-[var(--color-text-secondary)] text-[12px]">
-          <IoPencilOutline className="w-3.5 h-3.5 flex-shrink-0 opacity-70" />
-          <span>{t('editor.read_mode_banner')}</span>
-        </div>
-      )}
-
-      <div className="editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pt-3 pb-4">
+      <div
+        className={`editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pb-4 ${
+          isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
+        }`}
+      >
         <FluidEditor
           key={`${note.id}-${activePageId}`}
           content={localContent}

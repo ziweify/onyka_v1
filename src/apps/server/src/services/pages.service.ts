@@ -21,7 +21,18 @@ export class PagesServiceError extends Error {
 export class PagesService {
   async getPages(noteId: string, userId: string): Promise<NotePage[]> {
     await this.verifyNoteAccess(noteId, userId, 'read')
-    return pageRepository.findByNoteId(noteId)
+    let pages = await pageRepository.findByNoteId(noteId)
+
+    // Legacy notes may only have notes.content — ensure a page exists for editor/versions
+    if (pages.length === 0) {
+      const note = await noteRepository.findById(noteId)
+      if (note) {
+        const page = await this.createInitialPage(noteId, note.title, note.content)
+        pages = [page]
+      }
+    }
+
+    return pages
   }
 
   async getPage(pageId: string, userId: string): Promise<NotePage> {

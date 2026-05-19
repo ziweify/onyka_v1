@@ -24,7 +24,7 @@ import { useBreakpoint } from '@/hooks/useIsMobile'
 import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
 import { PageTabs } from './PageTabs'
-import { ShareDialog, TagInput, NoteComments, ExportDialog } from '@/components/features'
+import { ShareDialog, TagInput, NoteComments, ExportDialog, VersionHistoryDrawer } from '@/components/features'
 import { ThemeToggle } from '@/components/ui'
 import { notesApi, sharesApi, pagesApi } from '@/services/api'
 import { useTagsStore } from '@/stores/tags'
@@ -97,6 +97,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [showCommentsPanel, setShowCommentsPanel] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const [noteInfoExpanded, setNoteInfoExpanded] = useState(false)
   const [collaboratorCount, setCollaboratorCount] = useState(0)
@@ -349,9 +350,63 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     if (pendingUpdatesRef.current && Object.keys(pendingUpdatesRef.current).length > 0) {
       await saveNow()
     }
+
+    let pageIdForVersion = activePage?.id ?? null
+    if (!pageIdForVersion && canEdit) {
+      try {
+        const { pages } = await pagesApi.list(note.id)
+        if (pages.length > 0) {
+          pageIdForVersion = pages[0].id
+          usePagesStore.setState((state) => ({
+            pagesByNote: { ...state.pagesByNote, [note.id]: pages },
+            activePageByNote: {
+              ...state.activePageByNote,
+              [note.id]: state.activePageByNote[note.id] || pages[0].id,
+            },
+          }))
+          if (!activePage) {
+            setLocalContent(pages[0].content)
+            localContentRef.current = pages[0].content
+            lastSavedRef.current.content = pages[0].content
+            lastActivePageIdRef.current = pages[0].id
+          }
+        }
+      } catch {
+        /* non-blocking */
+      }
+    }
+
+    if (pageIdForVersion && canEdit && !isPageLocked) {
+      try {
+        const latestContent = localContentRef.current
+        await updatePage(pageIdForVersion, { content: latestContent })
+        lastSavedRef.current.content = latestContent
+        await pagesApi.createVersion(pageIdForVersion, { action: 'checkpoint' })
+      } catch {
+        /* non-blocking */
+      }
+    }
     isEditingRef.current = false
     setIsEditMode(false)
   }
+
+  const handleVersionRestored = useCallback(
+    (page: NotePage, restoredNoteTitle?: string) => {
+      setLocalContent(page.content)
+      localContentRef.current = page.content
+      lastSavedRef.current = { ...lastSavedRef.current, content: page.content }
+      if (restoredNoteTitle !== undefined && restoredNoteTitle !== localTitle) {
+        setLocalTitle(restoredNoteTitle)
+        localTitleRef.current = restoredNoteTitle
+        lastSavedRef.current.title = restoredNoteTitle
+        void onUpdate({ title: restoredNoteTitle })
+      }
+      setIsEditMode(false)
+      isEditingRef.current = false
+      void refetchPages(note.id)
+    },
+    [localTitle, note.id, onUpdate, refetchPages]
+  )
 
   const handleTitleChange = (title: string) => {
     setLocalTitle(title)
@@ -864,6 +919,16 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     <button
                       onClick={() => {
                         setShowOptionsMenu(false)
+                        setShowVersionHistory(true)
+                      }}
+                      className="w-full flex items-center gap-2 px-3 h-8 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                    >
+                      <IoTimeOutline className="w-4 h-4" />
+                      <span>{t('versions.title')}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowOptionsMenu(false)
                         setShowExportDialog(true)
                       }}
                       className="w-full flex items-center gap-2 px-3 h-8 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
@@ -1008,6 +1073,18 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         onClose={() => setShowExportDialog(false)}
         noteId={note.id}
         title={localTitle}
+      />
+
+      <VersionHistoryDrawer
+        isOpen={showVersionHistory}
+        onClose={() => setShowVersionHistory(false)}
+        noteId={note.id}
+        pageId={activePage?.id}
+        noteTitle={localTitle}
+        currentPageTitle={activePage?.title ?? localTitle}
+        currentContent={localContent}
+        canEdit={canEdit && !isPageLocked}
+        onRestored={handleVersionRestored}
       />
     </div>
   )

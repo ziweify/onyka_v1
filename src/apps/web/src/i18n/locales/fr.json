@@ -239,6 +239,26 @@
     "include_subfolders": "Inclure les sous-dossiers",
     "shared_indicator": "Partagé"
   },
+  "versions": {
+    "title": "Historique des versions",
+    "list_heading": "Historique",
+    "empty": "Aucune version. Créée à la fin de l'édition ou via Enregistrer la version.",
+    "save_snapshot": "Enregistrer la version",
+    "preview": "Aperçu",
+    "diff": "Comparer",
+    "restore": "Restaurer cette version",
+    "restore_confirm": "Restaurer cette page à la version sélectionnée ? Le contenu actuel sera sauvegardé d'abord.",
+    "select_hint": "Sélectionnez une version à gauche",
+    "compare_old": "Plus ancien",
+    "compare_new": "Plus récent",
+    "current": "Actuel",
+    "diff_plain_hint": "Comparaison en texte brut (format simplifié). Vert = ajout, rouge barré = supprimé.",
+    "action_manual": "Sauvegarde manuelle",
+    "action_checkpoint": "Fin d'édition",
+    "action_before_restore": "Avant restauration",
+    "action_restore": "Restauré",
+    "no_page": "Impossible de charger la page. Enregistrez la note et réessayez."
+  },
   "export": {
     "title": "Exporter",
     "format": "Format",

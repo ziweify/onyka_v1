@@ -8,6 +8,9 @@ import type {
   NotePage,
   NotePageCreateInput,
   NotePageUpdateInput,
+  NoteVersion,
+  NoteVersionSummary,
+  NoteVersionCreateInput,
   Folder,
   FolderNote,
   Tag,
@@ -582,6 +585,23 @@ export const pagesApi = {
     request<{ page: NotePage }>(`/pages/${pageId}/reorder`, {
       method: 'POST',
       body: JSON.stringify({ newPosition }),
+    }),
+
+  listVersions: (pageId: string) =>
+    request<{ versions: NoteVersionSummary[] }>(`/pages/${pageId}/versions`),
+
+  getVersion: (versionId: string) =>
+    request<{ version: NoteVersion }>(`/pages/versions/${versionId}`),
+
+  createVersion: (pageId: string, data: NoteVersionCreateInput = {}) =>
+    request<{ version: NoteVersionSummary | null }>(`/pages/${pageId}/versions`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  restoreVersion: (versionId: string) =>
+    request<{ page: NotePage }>(`/pages/versions/${versionId}/restore`, {
+      method: 'POST',
     }),
 }
 

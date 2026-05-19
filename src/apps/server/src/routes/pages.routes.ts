@@ -1,6 +1,7 @@
 import { Router, type Router as RouterType } from 'express'
 import { z } from 'zod'
 import { pagesService } from '../services/pages.service.js'
+import { pageVersionsService } from '../services/page-versions.service.js'
 import { authenticate } from '../middleware/auth.js'
 
 const router: RouterType = Router()
@@ -23,6 +24,52 @@ const updatePageSchema = z.object({
 
 const reorderPageSchema = z.object({
   newPosition: z.number().int().min(0),
+})
+
+const createVersionSchema = z.object({
+  action: z.enum(['manual', 'checkpoint', 'before_restore', 'restore']).optional(),
+})
+
+// Version routes (before /:id)
+router.get('/versions/:versionId', async (req, res, next) => {
+  try {
+    const version = await pageVersionsService.get(req.params.versionId, req.userId!)
+    res.json({ version })
+  } catch (error) {
+    next(error)
+  }
+})
+
+router.post('/versions/:versionId/restore', async (req, res, next) => {
+  try {
+    const page = await pageVersionsService.restore(req.params.versionId, req.userId!)
+    res.json({ page })
+  } catch (error) {
+    next(error)
+  }
+})
+
+router.get('/:pageId/versions', async (req, res, next) => {
+  try {
+    const versions = await pageVersionsService.list(req.params.pageId, req.userId!)
+    res.json({ versions })
+  } catch (error) {
+    next(error)
+  }
+})
+
+router.post('/:pageId/versions', async (req, res, next) => {
+  try {
+    const input = createVersionSchema.parse(req.body ?? {})
+    const version = await pageVersionsService.createSnapshot(
+      req.params.pageId,
+      req.userId!,
+      input
+    )
+    res.status(version ? 201 : 200).json({ version })
+  } catch (error) {
+    next(error)
+  }
 })
 
 // Get all pages for a note

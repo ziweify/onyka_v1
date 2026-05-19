@@ -239,6 +239,26 @@
     "include_subfolders": "包含子文件夹",
     "shared_indicator": "已共享"
   },
+  "versions": {
+    "title": "版本历史",
+    "list_heading": "历史记录",
+    "empty": "暂无版本。完成编辑或点击「保存版本」后会自动记录。",
+    "save_snapshot": "保存版本",
+    "preview": "预览",
+    "diff": "对比",
+    "restore": "还原此版本",
+    "restore_confirm": "确定将当前页还原到所选版本？还原前会自动保存当前内容。",
+    "select_hint": "请从左侧选择一条版本",
+    "compare_old": "旧版本",
+    "compare_new": "新版本",
+    "current": "当前内容",
+    "diff_plain_hint": "以下为纯文本对比（格式标签已简化），绿色为新增、红色删除线为移除。",
+    "action_manual": "手动保存",
+    "action_checkpoint": "完成编辑",
+    "action_before_restore": "还原前",
+    "action_restore": "已还原",
+    "no_page": "无法加载页面数据，请先保存笔记后重试。"
+  },
   "export": {
     "title": "导出",
     "format": "格式",

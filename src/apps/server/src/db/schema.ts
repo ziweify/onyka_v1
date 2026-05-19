@@ -463,6 +463,40 @@ export const auditActionEnum = [
 ] as const
 export type AuditActionType = (typeof auditActionEnum)[number]
 
+export const noteVersionActionEnum = [
+  'manual',
+  'checkpoint',
+  'before_restore',
+  'restore',
+] as const
+export type NoteVersionActionType = (typeof noteVersionActionEnum)[number]
+
+export const noteVersions = sqliteTable(
+  'note_versions',
+  {
+    id: text('id').primaryKey(),
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    notePageId: text('note_page_id')
+      .notNull()
+      .references(() => notePages.id, { onDelete: 'cascade' }),
+    noteTitle: text('note_title').notNull(),
+    pageTitle: text('page_title').notNull(),
+    content: text('content').notNull(),
+    contentHash: text('content_hash').notNull(),
+    action: text('action', { enum: noteVersionActionEnum }).notNull(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => users.id),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('note_versions_page_idx').on(table.notePageId),
+    index('note_versions_page_created_idx').on(table.notePageId, table.createdAt),
+  ]
+)
+
 export const auditLogs = sqliteTable(
   'audit_logs',
   {

@@ -30,8 +30,9 @@ export const usePagesStore = create<PagesState>((set, get) => ({
   error: null,
 
   fetchPages: async (noteId: string) => {
-    // Skip if already loaded — pages refresh on create/delete/reorder
-    if (get().pagesByNote[noteId] !== undefined) return
+    const existing = get().pagesByNote[noteId]
+    // Skip only when we already have pages (empty [] may mean legacy note — refetch to backfill)
+    if (existing !== undefined && existing.length > 0) return
 
     set({ isLoading: true, error: null })
     try {

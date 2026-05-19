@@ -1,6 +1,7 @@
 export * from './user.js'
 export * from './note.js'
 export * from './page.js'
+export * from './page-version.js'
 export * from './folder.js'
 export * from './share.js'
 export * from './auth.js'

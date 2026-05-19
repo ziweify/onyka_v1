@@ -239,6 +239,26 @@
     "include_subfolders": "Include subfolders",
     "shared_indicator": "Shared"
   },
+  "versions": {
+    "title": "Version history",
+    "list_heading": "History",
+    "empty": "No versions yet. They are created when you finish editing or tap Save version.",
+    "save_snapshot": "Save version",
+    "preview": "Preview",
+    "diff": "Compare",
+    "restore": "Restore this version",
+    "restore_confirm": "Restore this page to the selected version? Your current content will be saved first.",
+    "select_hint": "Select a version on the left",
+    "compare_old": "Older",
+    "compare_new": "Newer",
+    "current": "Current",
+    "diff_plain_hint": "Plain-text diff (formatting simplified). Green = added, red strikethrough = removed.",
+    "action_manual": "Manual save",
+    "action_checkpoint": "Edit finished",
+    "action_before_restore": "Before restore",
+    "action_restore": "Restored",
+    "no_page": "Could not load page data. Save the note and try again."
+  },
   "export": {
     "title": "Export",
     "format": "Format",

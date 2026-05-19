@@ -47,8 +47,8 @@ const envSchema = z.object({
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(200),
 
   MAX_UPLOAD_SIZE_MB: z.coerce.number().default(10),
-  VERSION_RETENTION_DAYS: z.coerce.number().default(30),
-  MAX_VERSIONS_PER_NOTE: z.coerce.number().default(100),
+  VERSION_RETENTION_DAYS: z.coerce.number().default(14),
+  MAX_VERSIONS_PER_NOTE: z.coerce.number().default(30),
 
   // See: https://expressjs.com/en/guide/behind-proxies.html
   TRUST_PROXY: z.union([

@@ -38,6 +38,8 @@ import { usePagesStore } from '@/stores/pages'
 import { WordCounter, countWords } from './WordCounter'
 import { FocusTimer } from './FocusTimer'
 import { formatNoteDate, formatTimeAgo } from '@/utils/format'
+import { buildNoteStructurePath } from '@/utils/notePath'
+import { NotePathBreadcrumb } from './NotePathBreadcrumb'
 
 // Module-level cache for collaborator counts — avoids API call on every note switch
 const _collabCountCache = new Map<string, number>()
@@ -101,7 +103,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const optionsMenuRef = useRef<HTMLDivElement>(null)
 
   const { createTag } = useTagsStore()
-  const { fetchFolderTree } = useFoldersStore()
+  const { folderTree, fetchFolderTree } = useFoldersStore()
   const { focusMode, toggleFocusMode, editorFontSize, setEditorFontSize, editorFontFamily, setEditorFontFamily } = useThemeStore()
   const { user } = useAuthStore()
   const { sharedWithMe } = useSharesStore()
@@ -506,6 +508,31 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
 
   const currentFontFamily = EDITOR_FONT_FAMILIES.find(f => f.id === editorFontFamily)
 
+  useEffect(() => {
+    void fetchFolderTree()
+  }, [note.id, fetchFolderTree])
+
+  const structurePath = useMemo(
+    () =>
+      buildNoteStructurePath({
+        folderTree,
+        folderId: note.folderId,
+        rootLabel: t('editor.path_root'),
+        sharedPrefixLabel: !isOwner ? t('share.shared_with_me') : null,
+        sharedByName: !isOwner
+          ? sharedNote?.sharedBy.name || sharedNote?.sharedBy.username
+          : null,
+      }),
+    [
+      folderTree,
+      note.folderId,
+      t,
+      isOwner,
+      sharedNote?.sharedBy.name,
+      sharedNote?.sharedBy.username,
+    ]
+  )
+
   return (
     <div className="flex flex-col h-full relative z-10">
       <header className="relative z-20 px-4 md:px-8 pt-4 pb-2 bg-[var(--color-bg-secondary)]">
@@ -521,7 +548,11 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
               onChange={(e) => handleTitleChange(e.target.value)}
             />
             {!focusMode && (
-              <div className="flex items-center gap-2 mt-1.5 pl-8 md:pl-0 text-[11px] text-[var(--color-text-tertiary)] font-medium whitespace-nowrap overflow-hidden">
+              <div className="mt-1.5 pl-8 md:pl-0 space-y-1 min-w-0">
+                {structurePath.length > 0 && (
+                  <NotePathBreadcrumb segments={structurePath} />
+                )}
+                <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] font-medium whitespace-nowrap overflow-hidden">
                 <span>{formatNoteDate(note.createdAt, i18n.language)}</span>
                 <span className="opacity-30">·</span>
                 <span>{displayWordCount} {t('editor.info_words').toLowerCase()}</span>
@@ -537,6 +568,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     </button>
                   </>
                 )}
+                </div>
               </div>
             )}
           </div>

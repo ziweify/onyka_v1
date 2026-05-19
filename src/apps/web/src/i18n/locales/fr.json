@@ -72,6 +72,7 @@
     "no_recent": "Aucune note pour l'instant. Créez-en une."
   },
   "editor": {
+    "path_root": "Notes",
     "untitled": "Sans titre",
     "placeholder": "Écrivez ici...",
     "saved": "Enregistré",

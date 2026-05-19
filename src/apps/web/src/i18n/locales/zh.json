@@ -72,6 +72,7 @@
     "no_recent": "还没有笔记，先写一篇吧。"
   },
   "editor": {
+    "path_root": "笔记",
     "untitled": "无标题",
     "placeholder": "开始书写…",
     "saved": "已保存",

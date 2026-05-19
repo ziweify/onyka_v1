@@ -64,7 +64,12 @@
   },
   "home": {
     "start_writing": "你的写作空间",
-    "empty_message": "新建笔记沉淀想法，或用灵感速记随手记下念头。"
+    "empty_message": "新建笔记沉淀想法，或用灵感速记随手记下念头。",
+    "tab_home": "首页",
+    "dashboard_title": "工作台",
+    "dashboard_subtitle": "最近编辑的文档会显示在这里，点击即可打开。",
+    "recent_title": "最近编辑",
+    "no_recent": "还没有笔记，先写一篇吧。"
   },
   "editor": {
     "untitled": "无标题",

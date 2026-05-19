@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { OnykaLogo } from '@/components/ui/OnykaLogo'
 import { useTranslation } from 'react-i18next'
 import { Sidebar, MobileHeader } from '@/components/layout'
 import { NoteEditor } from '@/components/editor'
+import { DocumentTabBar } from '@/components/workspace/DocumentTabBar'
+import { WorkspaceDashboard } from '@/components/workspace/WorkspaceDashboard'
+import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
 import { WeeklyRecapModal } from '@/components/features/WeeklyRecapModal'
 import { SparksDrawer } from '@/components/features/SparksDrawer'
 import { SparkQuickAdd } from '@/components/features/SparkQuickAdd'
@@ -17,13 +19,13 @@ import { useSparksStore } from '@/stores/sparks'
 import { useSharesStore } from '@/stores/shares'
 import { useIsMobile, useShareNotifications } from '@/hooks'
 import { toast } from '@/components/ui/Toast'
-import { IoAddOutline } from 'react-icons/io5'
 import { SparkIcon } from '@/components/ui'
 import type { NoteUpdateInput } from '@onyka/shared'
 
 export function HomePage() {
   const { t } = useTranslation()
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
+  const { activeView, openNote, goHome, closeTab, updateTabTitle } = useWorkspaceTabsStore()
+  const selectedNoteId = activeView === 'home' ? null : activeView
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { currentNote, fetchNote, updateNote, setCurrentNote, deleteNote } = useNotesStore()
   const { fetchFolderTree, triggerNewNoteInput } = useFoldersStore()
@@ -144,6 +146,23 @@ export function HomePage() {
     }
   }, [selectedNoteId, fetchNote, setCurrentNote])
 
+  useEffect(() => {
+    if (currentNote?.id && currentNote.title) {
+      updateTabTitle(currentNote.id, currentNote.title)
+    }
+  }, [currentNote?.id, currentNote?.title, updateTabTitle])
+
+  const handleSelectNote = useCallback(
+    (noteId: string) => {
+      if (!noteId) {
+        goHome()
+        return
+      }
+      openNote(noteId)
+    },
+    [goHome, openNote]
+  )
+
   const handleUpdateNote = useCallback(
     async (updates: NoteUpdateInput) => {
       if (currentNote) {
@@ -159,10 +178,11 @@ export function HomePage() {
   const handleDeleteNote = useCallback(async () => {
     if (currentNote) {
       await deleteNote(currentNote.id)
-      setSelectedNoteId(null)
+      closeTab(currentNote.id)
+      goHome()
       fetchFolderTree()
     }
-  }, [currentNote, deleteNote, fetchFolderTree])
+  }, [currentNote, deleteNote, closeTab, goHome, fetchFolderTree])
 
   return (
     <div className={`h-dvh flex flex-col md:flex-row bg-[var(--color-bg-primary)] overflow-hidden transition-all duration-500 ${focusMode ? 'p-0' : 'p-2 gap-2 md:p-3 md:gap-3'}`}>
@@ -174,7 +194,7 @@ export function HomePage() {
       )}
 
       <Sidebar
-        onSelectNote={setSelectedNoteId}
+        onSelectNote={handleSelectNote}
         selectedNoteId={selectedNoteId}
         searchInputRef={searchInputRef}
       />
@@ -219,58 +239,14 @@ export function HomePage() {
             </div>
           </>
         )}
-        {currentNote ? (
+        {!focusMode && <DocumentTabBar />}
+        {activeView === 'home' ? (
+          <WorkspaceDashboard onNewNote={handleNewNote} />
+        ) : currentNote && currentNote.id === activeView ? (
           <NoteEditor note={currentNote} onUpdate={handleUpdateNote} onDelete={handleDeleteNote} />
         ) : (
-          <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
-            <div
-              className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[200px] md:w-[600px] md:h-[400px] rounded-full opacity-20 hidden md:block md:blur-3xl pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse, var(--color-accent) 0%, transparent 60%)' }}
-            />
-
-            <div className="text-center relative z-10 animate-blur-in max-w-md px-4">
-              <div className="relative w-24 h-24 md:w-36 md:h-36 mx-auto mb-6 md:mb-8">
-                <OnykaLogo
-                  className="absolute inset-0 w-full h-full hidden md:block md:blur-2xl opacity-80 animate-pulse-glow scale-150"
-                />
-                <OnykaLogo
-                  className="absolute inset-0 w-full h-full"
-                />
-              </div>
-
-              <h1 className="text-xl md:text-2xl font-semibold text-[var(--color-text-primary)] mb-2">
-                {t('home.start_writing')}
-              </h1>
-              <p className="text-xs md:text-sm text-[var(--color-text-secondary)] mb-6 md:mb-8">
-                {t('home.empty_message')}
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3">
-                <button
-                  onClick={handleNewNote}
-                  className="fold-button group w-full sm:w-auto"
-                >
-                  <span className="fold-corner" />
-                  <span className="fold-button-inner">
-                    <IoAddOutline className="w-4 h-4 transition-transform duration-300 group-hover:rotate-180" />
-                    <span>{t('sidebar.new_note')}</span>
-                  </span>
-                </button>
-
-                <button
-                  onClick={openSparkQuickAdd}
-                  className="spark-button group w-full sm:w-auto"
-                >
-                  <span className="spark-button-bg" />
-                  <span className="spark-button-inner">
-                    <span className="spark-icon-wrapper">
-                      <SparkIcon className="w-4 h-4 text-[var(--color-accent)]" />
-                    </span>
-                    <span>{t('sparks.title')}</span>
-                  </span>
-                </button>
-              </div>
-            </div>
+          <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-secondary)]">
+            {t('common.loading')}
           </div>
         )}
       </main>

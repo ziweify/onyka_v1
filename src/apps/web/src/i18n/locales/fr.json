@@ -64,7 +64,12 @@
   },
   "home": {
     "start_writing": "Votre espace d'écriture",
-    "empty_message": "Créez une note pour développer vos idées, ou un spark pour capturer une pensée rapide."
+    "empty_message": "Créez une note pour développer vos idées, ou un spark pour capturer une pensée rapide.",
+    "tab_home": "Accueil",
+    "dashboard_title": "Espace de travail",
+    "dashboard_subtitle": "Les notes modifiées récemment s'affichent ici — cliquez pour ouvrir.",
+    "recent_title": "Modifiées récemment",
+    "no_recent": "Aucune note pour l'instant. Créez-en une."
   },
   "editor": {
     "untitled": "Sans titre",

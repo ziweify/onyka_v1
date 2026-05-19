@@ -64,7 +64,12 @@
   },
   "home": {
     "start_writing": "Your writing space",
-    "empty_message": "Create a note to develop your ideas, or a spark to capture a quick thought."
+    "empty_message": "Create a note to develop your ideas, or a spark to capture a quick thought.",
+    "tab_home": "Home",
+    "dashboard_title": "Workspace",
+    "dashboard_subtitle": "Recently edited notes appear here — click to open.",
+    "recent_title": "Recently edited",
+    "no_recent": "No notes yet. Create your first one."
   },
   "editor": {
     "untitled": "Untitled",

@@ -1,0 +1,12 @@
+{
+  "folders": [
+    {
+      "name": "onyka",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "git.autoRepositoryDetection": true,
+    "git.ignoreSubmodules": true
+  }
+}

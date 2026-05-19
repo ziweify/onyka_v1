@@ -23,6 +23,15 @@ cp host.env.example host.env   # 编辑 IP
 
 详见 `README-deploy.txt`。
 
+## 在 Cursor 里打开（避免版本管理出现两个项目）
+
+请 **只打开本目录**，不要打开上一级的 `wwwroot`：
+
+- 推荐：`文件 → 打开工作区` → 选 `onyka.code-workspace`
+- 或：`文件 → 打开文件夹` → `/www/wwwroot/onyka`
+
+`src/` 是应用源码子目录，**不是**第二个 Git 仓库；若工作区开在 `wwwroot`，界面可能把 `onyka` 与 `src` 分成两组显示。
+
 ## 上游
 
 - 上游仓库: https://github.com/karl-cta/onyka

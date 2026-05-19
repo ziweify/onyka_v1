@@ -59,6 +59,11 @@ export class NotesService {
     return noteRepository.findByOwner(userId, filters)
   }
 
+  async listRecent(userId: string, limit: number): Promise<Note[]> {
+    const capped = Math.min(Math.max(1, limit), 50)
+    return noteRepository.findRecentByOwner(userId, capped)
+  }
+
   async update(noteId: string, userId: string, input: NoteUpdateInput): Promise<Note> {
     const note = await noteRepository.findById(noteId)
 

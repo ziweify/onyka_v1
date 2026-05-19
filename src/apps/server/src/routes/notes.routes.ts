@@ -76,6 +76,20 @@ router.get('/quick', async (req, res, next) => {
   }
 })
 
+const recentNotesSchema = z.object({
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+})
+
+router.get('/recent', async (req, res, next) => {
+  try {
+    const { limit } = recentNotesSchema.parse(req.query)
+    const notes = await notesService.listRecent(req.userId!, limit ?? 12)
+    res.json({ notes })
+  } catch (error) {
+    next(error)
+  }
+})
+
 router.post('/quick', createNoteRateLimit, async (req, res, next) => {
   try {
     const note = await notesService.createQuickNote(req.userId!)

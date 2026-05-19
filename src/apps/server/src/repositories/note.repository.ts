@@ -71,6 +71,17 @@ export class NoteRepository {
     return result.map(this.mapToNote)
   }
 
+  async findRecentByOwner(ownerId: string, limit: number): Promise<Note[]> {
+    const result = await db
+      .select()
+      .from(notes)
+      .where(and(eq(notes.ownerId, ownerId), eq(notes.isDeleted, false)))
+      .orderBy(desc(notes.updatedAt))
+      .limit(limit)
+
+    return result.map(this.mapToNote)
+  }
+
   async create(ownerId: string, input: NoteCreateInput): Promise<Note> {
     const now = new Date()
     const id = nanoid()

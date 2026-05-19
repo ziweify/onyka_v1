@@ -126,7 +126,7 @@ function RootDropZone({ isDragging, isActive }: { isDragging: boolean; isActive:
 }
 
 interface SidebarProps {
-  onSelectNote: (noteId: string) => void
+  onSelectNote: (noteId: string, title?: string) => void
   selectedNoteId: string | null
   searchInputRef?: React.RefObject<HTMLInputElement | null>
 }
@@ -406,14 +406,27 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     return rootItems.map(item => makeDragId(item.type, item.id))
   }, [rootItems])
 
-  const handleSelectNote = (noteId: string, event?: React.MouseEvent) => {
+  const noteTitleById = useMemo(() => {
+    const map = new Map<string, string>()
+    const walk = (folders: typeof folderTree) => {
+      for (const folder of folders) {
+        folder.notes.forEach((n) => map.set(n.id, n.title))
+        walk(folder.children)
+      }
+    }
+    walk(folderTree)
+    rootNotes.forEach((n) => map.set(n.id, n.title))
+    return map
+  }, [folderTree, rootNotes])
+
+  const handleSelectNote = (noteId: string, event?: React.MouseEvent, title?: string) => {
     if (event && (event.metaKey || event.ctrlKey)) {
       toggleNoteSelection(noteId)
     } else if (isSelectionMode) {
       toggleNoteSelection(noteId)
     } else {
       clearAllSelection()
-      onSelectNote(noteId)
+      onSelectNote(noteId, title ?? noteTitleById.get(noteId))
       closeMobileSidebar()
     }
   }
@@ -445,7 +458,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const handleCreateNote = async () => {
     const title = newNoteName.trim() || t('editor.untitled')
     const note = await createNote({ title, content: '', folderId: null })
-    handleSelectNote(note.id)
+    handleSelectNote(note.id, undefined, title)
     setNewNoteId(note.id)
     closeNewNoteInput()
     setNewNoteName('')
@@ -454,7 +467,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
 
   const handleCreateNoteInFolder = async (folderId: string, title: string) => {
     const note = await createNote({ title, content: '', folderId })
-    handleSelectNote(note.id)
+    handleSelectNote(note.id, undefined, title)
     setNewNoteId(note.id)
     setTimeout(() => setNewNoteId(null), 1000)
     fetchFolderTree()
@@ -848,7 +861,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                 <button
                   key={result.id}
                   onClick={() => {
-                    onSelectNote(result.id)
+                    onSelectNote(result.id, result.title)
                     clearSearchField()
                     if (isMobile) closeMobileSidebar()
                   }}

@@ -14,6 +14,7 @@ import { useCommentsStore } from './comments'
 import { usePagesStore } from './pages'
 import { useSettingsStore } from './settings'
 import { resetSocket } from '@/hooks/useSocket'
+import { resetWorkspaceTabs } from './workspaceTabs'
 
 /** Resets all user-scoped stores on logout to prevent data leaking between sessions. */
 function clearAllUserStores() {
@@ -46,6 +47,7 @@ function clearAllUserStores() {
     lastDismissedId: null,
   })
   localStorage.removeItem('onyka-recaps')
+  resetWorkspaceTabs()
 }
 
 interface AuthState {

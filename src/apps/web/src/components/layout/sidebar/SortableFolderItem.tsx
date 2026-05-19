@@ -34,7 +34,7 @@ interface SortableFolderItemProps {
   isSelectionMode: boolean
   activeItem: DragItemId | null
   onToggleExpand: (id: string) => void
-  onSelectNote: (noteId: string, event?: React.MouseEvent) => void
+  onSelectNote: (noteId: string, event?: React.MouseEvent, title?: string) => void
   onSelectFolder: (folderId: string, event?: React.MouseEvent) => void
   onDeleteNote: (noteId: string, noteName: string) => void
   onRenameNote: (noteId: string, newTitle: string) => void
@@ -585,7 +585,7 @@ export function SortableFolderItem({
                     isSelected={selectedNoteId === note.id}
                     isMultiSelected={selectedNoteIds.includes(note.id)}
                     activeItem={activeItem}
-                    onSelect={(e) => onSelectNote(note.id, e)}
+                    onSelect={(e) => onSelectNote(note.id, e, note.title)}
                     onDelete={() => onDeleteNote(note.id, note.title)}
                     onRename={(newTitle) => onRenameNote(note.id, newTitle)}
                     isNew={note.id === newNoteId}

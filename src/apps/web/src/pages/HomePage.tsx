@@ -4,7 +4,7 @@ import { Sidebar, MobileHeader } from '@/components/layout'
 import { NoteEditor } from '@/components/editor'
 import { DocumentTabBar } from '@/components/workspace/DocumentTabBar'
 import { WorkspaceDashboard } from '@/components/workspace/WorkspaceDashboard'
-import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
+import { useWorkspaceTabsStore, setWorkspaceTabsUser } from '@/stores/workspaceTabs'
 import { WeeklyRecapModal } from '@/components/features/WeeklyRecapModal'
 import { SparksDrawer } from '@/components/features/SparksDrawer'
 import { SparkQuickAdd } from '@/components/features/SparkQuickAdd'
@@ -26,6 +26,7 @@ export function HomePage() {
   const { t } = useTranslation()
   const { activeView, openNote, goHome, closeTab, updateTabTitle } = useWorkspaceTabsStore()
   const selectedNoteId = activeView === 'home' ? null : activeView
+  const [dashboardRefresh, setDashboardRefresh] = useState(0)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const { currentNote, fetchNote, updateNote, setCurrentNote, deleteNote } = useNotesStore()
   const { fetchFolderTree, triggerNewNoteInput } = useFoldersStore()
@@ -65,7 +66,22 @@ export function HomePage() {
   }, [triggerNewNoteInput, isMobile, openMobileSidebar])
 
   useEffect(() => {
+    setWorkspaceTabsUser(user?.id ?? null)
+  }, [user?.id])
+
+  useEffect(() => {
+    if (activeView === 'home') {
+      setDashboardRefresh((k) => k + 1)
+    }
+  }, [activeView])
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'w' && (e.metaKey || e.ctrlKey) && activeView !== 'home') {
+        e.preventDefault()
+        closeTab(activeView)
+        return
+      }
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         searchInputRef.current?.focus()
@@ -92,7 +108,7 @@ export function HomePage() {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [toggleFocusMode, focusMode, focusEditorWidth, setFocusEditorWidth, openSparkQuickAdd])
+  }, [toggleFocusMode, focusMode, focusEditorWidth, setFocusEditorWidth, openSparkQuickAdd, activeView, closeTab])
 
   useEffect(() => {
     if (!isResizingFocus) return
@@ -153,12 +169,12 @@ export function HomePage() {
   }, [currentNote?.id, currentNote?.title, updateTabTitle])
 
   const handleSelectNote = useCallback(
-    (noteId: string) => {
+    (noteId: string, title?: string) => {
       if (!noteId) {
         goHome()
         return
       }
-      openNote(noteId)
+      openNote(noteId, title)
     },
     [goHome, openNote]
   )
@@ -241,7 +257,7 @@ export function HomePage() {
         )}
         {!focusMode && <DocumentTabBar />}
         {activeView === 'home' ? (
-          <WorkspaceDashboard onNewNote={handleNewNote} />
+          <WorkspaceDashboard onNewNote={handleNewNote} refreshKey={dashboardRefresh} />
         ) : currentNote && currentNote.id === activeView ? (
           <NoteEditor note={currentNote} onUpdate={handleUpdateNote} onDelete={handleDeleteNote} />
         ) : (

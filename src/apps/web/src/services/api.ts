@@ -333,6 +333,9 @@ export const notesApi = {
     return request<{ notes: Note[] }>(`/notes${query ? `?${query}` : ''}`)
   },
 
+  recent: (limit = 12) =>
+    request<{ notes: Note[] }>(`/notes/recent?limit=${limit}`),
+
   get: (id: string) => request<{ note: NoteWithTags }>(`/notes/${id}`),
 
   create: (data: NoteCreateInput) =>

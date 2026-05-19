@@ -15,7 +15,7 @@ import { getAvatarRingClass } from '@/utils/avatar'
 
 interface SharedWithMeSectionProps {
   selectedNoteId: string | null
-  onSelectNote: (noteId: string) => void
+  onSelectNote: (noteId: string, title?: string) => void
 }
 
 const PERMISSION_COLORS: Record<string, string> = {
@@ -426,7 +426,7 @@ export function SharedWithMeSection({ selectedNoteId, onSelectNote }: SharedWith
                           key={note.id}
                           note={note}
                           isSelected={selectedNoteId === note.id}
-                          onSelect={() => onSelectNote(note.id)}
+                          onSelect={() => onSelectNote(note.id, note.title)}
                           onNoteUpdated={fetchSharedWithMe}
                         />
                       ))}

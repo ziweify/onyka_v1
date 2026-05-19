@@ -70,7 +70,17 @@ export async function loadLanguageFromServer(): Promise<Language | null> {
 }
 
 export function getCurrentLanguage(): Language {
-  return (i18n.language || 'en') as Language
+  return (i18n.language || 'zh') as Language
+}
+
+const SUPPORTED_LANGUAGES: Language[] = ['en', 'fr', 'zh']
+
+/** Prefer browser local choice, then user profile, then Chinese default. */
+export function resolveUserLanguage(user?: { language?: Language } | null): Language {
+  const saved = localStorage.getItem('onyka-language') as Language | null
+  if (saved && SUPPORTED_LANGUAGES.includes(saved)) return saved
+  if (user?.language && SUPPORTED_LANGUAGES.includes(user.language)) return user.language
+  return 'zh'
 }
 
 export default i18n

@@ -132,13 +132,14 @@ interface SidebarProps {
 }
 
 export function MobileHeader({ onOpenSidebar, onOpenSearch }: { onOpenSidebar: () => void; onOpenSearch: () => void }) {
+  const { t } = useTranslation()
   return (
     <header className="md:hidden fixed top-0 left-0 right-0 z-40 h-14 px-3 flex items-center justify-between bg-[var(--color-bg-secondary)] border-b border-[var(--color-border-subtle)]">
       <div className="flex items-center gap-2">
         <button
           onClick={onOpenSidebar}
           className="p-2.5 -ml-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] rounded-xl transition-all active:scale-95"
-          aria-label="Open sidebar menu"
+          aria-label={t('sidebar.expand')}
         >
           <IoMenuOutline className="w-6 h-6" />
         </button>
@@ -151,7 +152,7 @@ export function MobileHeader({ onOpenSidebar, onOpenSearch }: { onOpenSidebar: (
       <button
         onClick={onOpenSearch}
         className="p-2.5 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] rounded-xl transition-all active:scale-95"
-        aria-label="Search"
+        aria-label={t('sidebar.search_shortcut')}
       >
         <IoSearchOutline className="w-5 h-5" />
       </button>
@@ -757,7 +758,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             <span className="fold-corner" />
             <span className="fold-button-inner">
               <IoAddOutline className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
-              <span>Note</span>
+              <span>{t('sidebar.new_note_btn')}</span>
             </span>
           </button>
 
@@ -775,7 +776,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                 onClick={() => { openDrawer(); closeMobileSidebar() }}
                 className="spark-split-library"
               >
-                Sparks
+                {t('sidebar.sparks_btn')}
               </button>
             </span>
           </div>
@@ -834,7 +835,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
 
       <nav
         className="flex-1 overflow-y-auto px-2 scrollbar-none min-h-0"
-        aria-label={isSearchActive ? t('search.results') : 'File tree'}
+        aria-label={isSearchActive ? t('search.results') : t('sidebar.file_tree')}
       >
         {isSearchActive ? (
           <div className="py-1">

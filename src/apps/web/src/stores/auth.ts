@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { User } from '@onyka/shared'
 import { authApi, ApiException, type RateLimitInfo, type Auth2FARequiredResponse, resetRefreshState } from '@/services/api'
-import { setLanguage } from '@/i18n'
+import { setLanguage, setLanguageWithServer, resolveUserLanguage } from '@/i18n'
 import { useThemeStore, setAuthenticatedState } from './theme'
 import { useNotesStore } from './notes'
 import { useFoldersStore } from './folders'
@@ -86,8 +86,10 @@ export const useAuthStore = create<AuthState>((set) => ({
 
       const user = (response as { user: User }).user
       resetRefreshState()
-      if (user.language) {
-        setLanguage(user.language)
+      const lang = resolveUserLanguage(user)
+      setLanguage(lang)
+      if (user.language !== lang) {
+        void setLanguageWithServer(lang)
       }
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)
@@ -109,6 +111,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ error: null, rateLimitInfo: null })
     try {
       const { user } = await authApi.register({ username, password, email })
+      const lang = resolveUserLanguage(user)
+      setLanguage(lang)
+      void setLanguageWithServer(lang)
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)
       set({ user, isAuthenticated: true })
@@ -152,8 +157,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     try {
       const { user } = await authApi.me()
-      if (user.language) {
-        setLanguage(user.language)
+      const lang = resolveUserLanguage(user)
+      setLanguage(lang)
+      if (user.language !== lang) {
+        void setLanguageWithServer(lang)
       }
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)

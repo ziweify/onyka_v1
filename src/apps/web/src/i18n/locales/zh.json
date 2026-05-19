@@ -557,13 +557,16 @@
       "blue": "蓝色",
       "indigo": "靛蓝",
       "violet": "紫色",
+      "fuchsia": "洋红",
       "pink": "粉色",
       "red": "红色",
       "orange": "橙色",
       "amber": "琥珀",
+      "lime": "青柠",
       "green": "绿色",
       "teal": "青绿",
       "cyan": "青色",
+      "sky": "天蓝",
       "slate": "石板灰",
       "zinc": "锌灰"
     }

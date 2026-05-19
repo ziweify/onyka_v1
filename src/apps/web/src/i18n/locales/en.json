@@ -557,13 +557,16 @@
       "blue": "Blue",
       "indigo": "Indigo",
       "violet": "Violet",
+      "fuchsia": "Fuchsia",
       "pink": "Pink",
       "red": "Red",
       "orange": "Orange",
       "amber": "Amber",
+      "lime": "Lime",
       "green": "Green",
       "teal": "Teal",
       "cyan": "Cyan",
+      "sky": "Sky",
       "slate": "Slate",
       "zinc": "Zinc"
     }

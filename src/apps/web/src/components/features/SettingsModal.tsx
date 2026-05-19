@@ -377,8 +377,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                                     backgroundColor: colorValue,
                                     ...(isSelected && { boxShadow: `0 0 0 2px ${colorValue}` }),
                                   }}
-                                  title={color.name}
-                                  aria-label={color.name}
+                                  title={t(`theme.colors.${color.id}`)}
+                                  aria-label={t(`theme.colors.${color.id}`)}
                                 />
                               )
                             })}

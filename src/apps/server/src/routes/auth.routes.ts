@@ -41,8 +41,9 @@ const loginSchema = z.object({
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  // Secure cookies require HTTPS; HTTP + IP:port must use COOKIE_SECURE=false
+  secure: env.COOKIE_SECURE,
+  sameSite: 'lax' as const,
   path: '/',
 }
 

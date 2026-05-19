@@ -74,6 +74,16 @@ const envSchema = z.object({
     .optional(),
 
   FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+
+  // false = allow auth cookies over HTTP (IP:port without TLS). Auto-derived from FRONTEND_URL if unset.
+  COOKIE_SECURE: z
+    .union([z.literal('true'), z.literal('false'), z.literal('1'), z.literal('0')])
+    .optional()
+    .transform((v) => {
+      if (v === 'true' || v === '1') return true
+      if (v === 'false' || v === '0') return false
+      return undefined
+    }),
 }).superRefine((data, ctx) => {
   const smtpFields = { SMTP_HOST: data.SMTP_HOST, SMTP_USER: data.SMTP_USER, SMTP_PASS: data.SMTP_PASS }
   const defined = Object.entries(smtpFields).filter(([, v]) => v !== undefined)
@@ -121,7 +131,19 @@ if (!parsed.success) {
   process.exit(1)
 }
 
-export const env = parsed.data
+const _env = parsed.data
+export const env = {
+  ..._env,
+  COOKIE_SECURE:
+    _env.COOKIE_SECURE ??
+    (() => {
+      try {
+        return new URL(_env.FRONTEND_URL).protocol === 'https:'
+      } catch {
+        return false
+      }
+    })(),
+}
 
 // ---------------------------------------------------------------------------
 // Data directory — single source of truth for all persisted files

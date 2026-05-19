@@ -1,5 +1,9 @@
 # 业务数据与密钥（切勿提交）
 data/
+**/.encryption-key
+**/.jwt-secret
+**/onyka.db
+**/onyka.db-*
 
 # 依赖与构建缓存
 node_modules/

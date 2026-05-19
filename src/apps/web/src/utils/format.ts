@@ -1,5 +1,6 @@
 import type { TFunction } from 'i18next'
 import i18next from 'i18next'
+import { getDateLocale } from './locale'
 
 /**
  * Format a date as a relative time string (e.g., "5 minutes ago", "2 days ago")
@@ -45,7 +46,7 @@ export function formatRelativeTime(
   if (diffHours < 24) return i18next.t('sessions.hours_ago', { n: diffHours })
   if (diffDays < 7) return i18next.t('sessions.days_ago', { n: diffDays })
 
-  return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+  return d.toLocaleDateString(getDateLocale(locale), {
     month: 'short',
     day: 'numeric',
   })
@@ -57,7 +58,7 @@ export function formatRelativeTime(
 export function formatNoteDate(date: Date | string, locale: string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return '-'
-  return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+  return d.toLocaleDateString(getDateLocale(locale), {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

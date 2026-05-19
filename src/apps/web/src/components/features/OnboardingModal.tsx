@@ -335,13 +335,14 @@ function LanguagePhase({ onSelected }: { onSelected: () => void }) {
       {/* Language buttons */}
       <div className="flex gap-3">
         {([
-          { code: 'fr' as Language, label: 'Fran\u00e7ais', flag: '\ud83c\uddeb\ud83c\uddf7' },
+          { code: 'zh' as Language, label: '简体中文', flag: '\ud83c\udde8\ud83c\uddf3' },
           { code: 'en' as Language, label: 'English', flag: '\ud83c\uddec\ud83c\udde7' },
+          { code: 'fr' as Language, label: 'Fran\u00e7ais', flag: '\ud83c\uddeb\ud83c\uddf7' },
         ]).map((lang, i) => (
           <motion.button
             key={lang.code}
             onClick={() => handleSelect(lang.code)}
-            className={`flex-1 flex flex-col items-center gap-2 py-4 px-3 rounded-2xl border transition-all duration-200 ${
+            className={`flex-1 flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border transition-all duration-200 ${
               selected === lang.code
                 ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/15 scale-[1.02]'
                 : currentLang === lang.code && !selected
@@ -353,8 +354,8 @@ function LanguagePhase({ onSelected }: { onSelected: () => void }) {
             transition={{ delay: 0.12 + i * 0.06, duration: 0.25, ease: EXPO_OUT }}
             whileTap={{ scale: 0.97 }}
           >
-            <span className="text-2xl font-bold text-white/90">{lang.flag}</span>
-            <span className="text-sm text-white/70">{lang.label}</span>
+            <span className="text-xl font-bold text-white/90">{lang.flag}</span>
+            <span className="text-xs sm:text-sm text-white/70 leading-tight text-center">{lang.label}</span>
           </motion.button>
         ))}
       </div>

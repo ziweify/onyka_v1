@@ -165,7 +165,8 @@ function UsersSection() {
     if (!date) return '-'
     const d = new Date(typeof date === 'string' && /^\d+$/.test(date) ? Number(date) * 1000 : date)
     if (isNaN(d.getTime())) return '-'
-    return d.toLocaleDateString(i18n.language, { year: 'numeric', month: 'short', day: 'numeric' })
+    const locale = i18n.language === 'zh' ? 'zh-CN' : i18n.language === 'fr' ? 'fr-FR' : 'en-US'
+    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' })
   }
 
   const fetchUsers = useCallback(async () => {

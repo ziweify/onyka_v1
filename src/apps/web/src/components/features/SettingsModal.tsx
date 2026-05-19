@@ -388,33 +388,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         <div className="bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border)] p-4">
                           <div className="flex items-center justify-between">
                             <p className="text-sm font-medium text-[var(--color-text-primary)]">{t('settings.language')}</p>
-                            <div className="flex p-1 rounded-lg bg-[var(--color-bg-tertiary)]">
-                              <button
-                                onClick={() => {
-                                  setLanguageWithServer('fr')
-                                  setCurrentLang('fr')
-                                }}
-                                className={`px-3 py-1.5 rounded-md text-sm transition-all duration-150 ${
-                                  currentLang === 'fr'
-                                    ? 'bg-[var(--color-bg-primary)] shadow-sm'
-                                    : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
-                                }`}
-                              >
-                                🇫🇷
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setLanguageWithServer('en')
-                                  setCurrentLang('en')
-                                }}
-                                className={`px-3 py-1.5 rounded-md text-sm transition-all duration-150 ${
-                                  currentLang === 'en'
-                                    ? 'bg-[var(--color-bg-primary)] shadow-sm'
-                                    : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
-                                }`}
-                              >
-                                🇬🇧
-                              </button>
+                            <div className="flex p-1 rounded-lg bg-[var(--color-bg-tertiary)] gap-0.5">
+                              {(['zh', 'en', 'fr'] as Language[]).map((code) => (
+                                <button
+                                  key={code}
+                                  type="button"
+                                  onClick={() => {
+                                    setLanguageWithServer(code)
+                                    setCurrentLang(code)
+                                  }}
+                                  className={`px-2 py-1.5 rounded-md text-xs transition-all duration-150 ${
+                                    currentLang === code
+                                      ? 'bg-[var(--color-bg-primary)] shadow-sm'
+                                      : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+                                  }`}
+                                  title={t(`settings.languages.${code}`)}
+                                >
+                                  {code === 'zh' ? '🇨🇳' : code === 'en' ? '🇬🇧' : '🇫🇷'}
+                                </button>
+                              ))}
                             </div>
                           </div>
                         </div>

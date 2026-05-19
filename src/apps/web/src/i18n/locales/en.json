@@ -265,7 +265,8 @@
     "language": "Language",
     "languages": {
       "fr": "Français",
-      "en": "English"
+      "en": "English",
+      "zh": "简体中文"
     },
     "smooth_typing": "Smooth Typing",
     "smooth_typing_desc": "Fluid cursor animation while typing",

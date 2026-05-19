@@ -1,3 +1,7 @@
+/**
+ * Onyka 前端国际化入口（ziweify 定制）
+ * 最近修改: 2026-05-19 11:22:33 +0800 — 用于验证 src/ 已纳入 Git 版本管理
+ */
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import fr from './locales/fr.json'

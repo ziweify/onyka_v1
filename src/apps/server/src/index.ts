@@ -1,3 +1,4 @@
+/** 服务端入口 — 最近修改: 2026-05-19 11:22:33 +0800（验证 src Git 跟踪） */
 import express from 'express'
 import { createServer } from 'http'
 import { resolve, join, dirname } from 'path'

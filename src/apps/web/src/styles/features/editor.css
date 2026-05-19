@@ -217,6 +217,196 @@
   opacity: 0.9;
 }
 
+/* Document outline panel — visible but soft */
+.document-outline-panel {
+  border: 1px solid color-mix(in srgb, var(--color-accent) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent-muted) 55%, var(--color-bg-secondary));
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--color-accent) 6%, transparent),
+    0 4px 14px color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.document-outline-header {
+  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-accent-muted) 40%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 18%, var(--color-border-subtle));
+}
+
+.document-outline-header:hover {
+  background: color-mix(in srgb, var(--color-accent-muted) 70%, transparent);
+}
+
+.document-outline-header-icon {
+  color: var(--color-accent);
+  opacity: 0.85;
+}
+
+.document-outline-count {
+  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-tertiary));
+  padding: 0 0.35rem;
+  border-radius: 0.25rem;
+  font-weight: 600;
+}
+
+.document-outline-item {
+  color: var(--color-text-primary);
+}
+
+/* H1 → H2 → H3: wide steps so adjacent levels are easy to tell apart */
+.document-outline-item--h1 {
+  color: color-mix(in srgb, var(--color-accent) 96%, var(--color-text-primary));
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.document-outline-item--h2 {
+  color: color-mix(in srgb, var(--color-accent) 78%, var(--color-text-primary));
+  font-size: 0.78125rem;
+  font-weight: 600;
+}
+
+.document-outline-item--h3 {
+  color: color-mix(in srgb, var(--color-text-secondary) 82%, var(--color-text-tertiary));
+  font-size: 0.71875rem;
+  font-weight: 400;
+  opacity: 0.95;
+}
+
+.document-outline-item--marker {
+  color: color-mix(in srgb, var(--color-accent) 55%, var(--color-text-secondary));
+  font-size: 0.75rem;
+}
+
+.document-outline-item--rule {
+  color: color-mix(in srgb, var(--color-text-tertiary) 70%, var(--color-text-secondary));
+  font-size: 0.6875rem;
+  font-style: italic;
+}
+
+.document-outline-item--h1:hover {
+  background: color-mix(in srgb, var(--color-accent-muted) 80%, var(--color-bg-tertiary));
+}
+
+.document-outline-item--h2:hover {
+  background: color-mix(in srgb, var(--color-accent-muted) 65%, var(--color-bg-tertiary));
+}
+
+.document-outline-item--h3:hover,
+.document-outline-item--marker:hover,
+.document-outline-item--rule:hover {
+  background: color-mix(in srgb, var(--color-accent-muted) 50%, var(--color-bg-tertiary));
+}
+
+.document-outline-item--h1.is-active {
+  color: color-mix(in srgb, var(--color-accent) 95%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-accent-muted) 90%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.document-outline-item--h2.is-active {
+  color: color-mix(in srgb, var(--color-accent) 88%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-accent-muted) 78%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-accent) 88%, var(--color-border));
+}
+
+.document-outline-item--h3.is-active {
+  color: color-mix(in srgb, var(--color-accent) 42%, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--color-bg-tertiary) 90%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-text-tertiary) 55%, var(--color-border));
+}
+
+.document-outline-item--marker.is-active,
+.document-outline-item--rule.is-active {
+  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-accent-muted) 55%, transparent);
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--color-accent) 40%, var(--color-border));
+}
+
+.document-outline-item-icon {
+  opacity: 1;
+}
+
+.document-outline-item--h1 .document-outline-item-icon {
+  color: var(--color-accent);
+}
+
+.document-outline-item--h2 .document-outline-item-icon {
+  color: color-mix(in srgb, var(--color-accent) 90%, var(--color-text-tertiary));
+}
+
+.document-outline-item--h3 .document-outline-item-icon {
+  color: var(--color-text-tertiary);
+}
+
+.document-outline-level-badge {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.125rem 0.3rem;
+  border-radius: 0.25rem;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.document-outline-item--h1 .document-outline-level-badge {
+  color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.document-outline-item--h2 .document-outline-level-badge {
+  color: color-mix(in srgb, var(--color-accent) 85%, var(--color-text-primary));
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-tertiary));
+}
+
+.document-outline-item--h3 .document-outline-level-badge {
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  font-weight: 600;
+}
+
+.document-outline-item--marker .document-outline-item-icon {
+  color: color-mix(in srgb, var(--color-accent) 60%, var(--color-text-tertiary));
+}
+
+.document-outline-item--rule .document-outline-item-icon {
+  color: var(--color-text-tertiary);
+}
+
+.document-outline-item.is-active .document-outline-item-icon {
+  opacity: 1;
+}
+
+.document-outline-rules {
+  border-top-color: color-mix(in srgb, var(--color-accent) 15%, var(--color-border-subtle));
+}
+
+.document-outline-rules-toggle {
+  color: color-mix(in srgb, var(--color-accent) 55%, var(--color-text-tertiary));
+}
+
+.document-outline-rules-toggle:hover {
+  color: color-mix(in srgb, var(--color-accent) 75%, var(--color-text-secondary));
+  background: color-mix(in srgb, var(--color-accent-muted) 50%, transparent);
+}
+
+.document-outline-empty {
+  color: color-mix(in srgb, var(--color-accent) 45%, var(--color-text-tertiary));
+}
+
+.document-outline-toggle.is-on {
+  border-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-border-subtle));
+  background: color-mix(in srgb, var(--color-accent-muted) 75%, transparent);
+  color: color-mix(in srgb, var(--color-accent) 85%, var(--color-text-primary));
+}
+
+.document-outline-drawer-wrap {
+  border-top: 1px solid color-mix(in srgb, var(--color-accent) 22%, var(--color-border-subtle));
+  background: color-mix(in srgb, var(--color-accent-muted) 40%, var(--color-bg-secondary));
+}
+
 .fluid-editor-content ul {
   margin: 0.5em 0;
   padding-left: 1.5em;

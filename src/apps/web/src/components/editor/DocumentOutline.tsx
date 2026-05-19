@@ -31,6 +31,15 @@ const KIND_ICON: Record<OutlineItemKind, typeof IoTextOutline> = {
   rule: IoPricetagOutline,
 }
 
+function outlineItemLevelClass(item: OutlineItem): string {
+  if (item.kind === 'heading') {
+    const lvl = Math.min(3, Math.max(1, item.level))
+    return `document-outline-item--h${lvl}`
+  }
+  if (item.kind === 'marker') return 'document-outline-item--marker'
+  return 'document-outline-item--rule'
+}
+
 function findActiveItem(items: OutlineItem[], scrollRoot: HTMLElement | null): string | null {
   if (!scrollRoot || items.length === 0) return items[0]?.id ?? null
 
@@ -96,33 +105,33 @@ export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentO
 
   const panel = (
     <div
-      className={`rounded-xl border border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)]/95 backdrop-blur-sm shadow-sm overflow-hidden flex flex-col ${
+      className={`document-outline-panel rounded-xl backdrop-blur-sm overflow-hidden flex flex-col ${
         variant === 'drawer' ? 'w-full max-h-[50vh]' : 'w-44 xl:w-52 max-h-[min(65vh,32rem)]'
       }`}
     >
       <button
         type="button"
         onClick={() => setCollapsed((c) => !c)}
-        className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0"
+        className="document-outline-header w-full flex items-center gap-2 px-3 py-2.5 text-[11px] font-semibold transition-colors shrink-0"
       >
-        <IoListOutline className="w-3.5 h-3.5 shrink-0" />
+        <IoListOutline className="document-outline-header-icon w-3.5 h-3.5 shrink-0" />
         <span className="flex-1 text-left truncate">{t('editor.outline_title')}</span>
-        <span className="text-[10px] font-normal text-[var(--color-text-tertiary)]">{items.length}</span>
+        <span className="document-outline-count text-[10px] tabular-nums">{items.length}</span>
         {collapsed ? (
-          <IoChevronDownOutline className="w-3.5 h-3.5" />
+          <IoChevronDownOutline className="w-3.5 h-3.5 opacity-70" />
         ) : (
-          <IoChevronUpOutline className="w-3.5 h-3.5" />
+          <IoChevronUpOutline className="w-3.5 h-3.5 opacity-70" />
         )}
       </button>
 
       {!collapsed && (
         <>
           {items.length === 0 ? (
-            <div className="px-3 pb-3 text-[11px] text-[var(--color-text-tertiary)] leading-relaxed">
+            <div className="document-outline-empty px-3 pb-3 text-[11px] leading-relaxed">
               {t('editor.outline_empty')}
             </div>
           ) : (
-            <ul className="px-2 pb-1 overflow-y-auto flex-1 text-[11px] leading-snug min-h-0">
+            <ul className="px-2 py-1 overflow-y-auto flex-1 text-[11px] leading-snug min-h-0">
               {items.map((item) => {
                 const Icon = KIND_ICON[item.kind]
                 const isActive = activeId === item.id
@@ -131,15 +140,17 @@ export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentO
                     <button
                       type="button"
                       onClick={() => scrollTo(item)}
-                      className={`w-full flex items-center gap-1.5 text-left py-1.5 px-2 rounded-md transition-colors truncate ${
-                        isActive
-                          ? 'bg-[var(--color-accent)]/15 text-[var(--color-accent)] font-medium'
-                          : 'text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-bg-tertiary)]'
+                      className={`document-outline-item ${outlineItemLevelClass(item)} w-full flex items-center gap-1.5 text-left py-1.5 px-2 rounded-md transition-colors truncate ${
+                        isActive ? 'is-active' : ''
                       }`}
                       style={{ paddingLeft: `${(item.level - 1) * 10 + 8}px` }}
                       title={item.text}
                     >
-                      <Icon className="w-3 h-3 shrink-0 opacity-60" />
+                      {item.kind === 'heading' ? (
+                        <span className="document-outline-level-badge">H{item.level}</span>
+                      ) : (
+                        <Icon className="document-outline-item-icon w-3 h-3 shrink-0" />
+                      )}
                       <span className="truncate">{item.text}</span>
                     </button>
                   </li>
@@ -148,17 +159,17 @@ export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentO
             </ul>
           )}
 
-          <div className="border-t border-[var(--color-border-subtle)] shrink-0">
+          <div className="document-outline-rules shrink-0 border-t">
             <button
               type="button"
               onClick={() => setShowRules((s) => !s)}
-              className="w-full flex items-center gap-1.5 px-3 py-2 text-[10px] text-[var(--color-text-tertiary)] hover:bg-[var(--color-bg-tertiary)] transition-colors"
+              className="document-outline-rules-toggle w-full flex items-center gap-1.5 px-3 py-2 text-[10px] transition-colors"
             >
               <IoInformationCircleOutline className="w-3.5 h-3.5 shrink-0" />
               <span>{t('editor.outline_rules_title')}</span>
             </button>
             {showRules && (
-              <ul className="px-3 pb-2.5 space-y-1 text-[10px] text-[var(--color-text-tertiary)] leading-relaxed list-disc list-inside">
+              <ul className="document-outline-empty px-3 pb-2.5 space-y-1 text-[10px] leading-relaxed list-disc list-inside">
                 {OUTLINE_RULE_HINTS.map((key) => (
                   <li key={key}>{t(key)}</li>
                 ))}

@@ -687,10 +687,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     <button
                       type="button"
                       onClick={() => setShowOutline((o) => !o)}
-                      className={`h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border transition-colors ${
-                        showOutline
-                          ? 'border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
-                          : 'border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'
+                      className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
+                        showOutline ? 'is-on' : ''
                       }`}
                       title={t('editor.outline_title')}
                     >
@@ -712,10 +710,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     <button
                       type="button"
                       onClick={() => setShowOutline((o) => !o)}
-                      className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-colors shrink-0 ${
-                        showOutline
-                          ? 'border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
-                          : 'border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'
+                      className={`document-outline-toggle h-8 w-8 rounded-lg flex items-center justify-center border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 ${
+                        showOutline ? 'is-on' : ''
                       }`}
                       title={t('editor.outline_title')}
                     >
@@ -1093,7 +1089,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           <DocumentOutline editor={editorInstance} open={showOutline} variant="sidebar" />
         )}
         {!markdownMode && showOutline && (
-          <div className="lg:hidden border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)] px-3 py-2 shrink-0">
+          <div className="document-outline-drawer-wrap lg:hidden px-3 py-2 shrink-0">
             <DocumentOutline editor={editorInstance} open={showOutline} variant="drawer" />
           </div>
         )}

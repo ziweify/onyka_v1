@@ -438,6 +438,79 @@ export const noteUploads = sqliteTable(
   ]
 )
 
+export const attachmentStatusEnum = ['uploading', 'ready'] as const
+export type AttachmentStatusType = (typeof attachmentStatusEnum)[number]
+
+export const uploadSessionStatusEnum = ['active', 'completed', 'aborted'] as const
+export type UploadSessionStatusType = (typeof uploadSessionStatusEnum)[number]
+
+export const attachments = sqliteTable(
+  'attachments',
+  {
+    id: text('id').primaryKey(),
+    homeNoteId: text('home_note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    originalName: text('original_name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    size: integer('size').notNull(),
+    fingerprint: text('fingerprint').notNull(),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: text('status', { enum: attachmentStatusEnum }).notNull().default('uploading'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('attachments_home_note_idx').on(table.homeNoteId),
+    index('attachments_owner_idx').on(table.ownerId),
+  ]
+)
+
+export const noteAttachments = sqliteTable(
+  'note_attachments',
+  {
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    attachmentId: text('attachment_id')
+      .notNull()
+      .references(() => attachments.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    uniqueIndex('note_attachments_pk').on(table.noteId, table.attachmentId),
+    index('note_attachments_attachment_idx').on(table.attachmentId),
+  ]
+)
+
+export const uploadSessions = sqliteTable(
+  'upload_sessions',
+  {
+    id: text('id').primaryKey(),
+    attachmentId: text('attachment_id')
+      .notNull()
+      .references(() => attachments.id, { onDelete: 'cascade' }),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    homeNoteId: text('home_note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    originalName: text('original_name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    totalSize: integer('total_size').notNull(),
+    receivedBytes: integer('received_bytes').notNull().default(0),
+    fingerprint: text('fingerprint').notNull(),
+    status: text('status', { enum: uploadSessionStatusEnum }).notNull().default('active'),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('upload_sessions_attachment_idx').on(table.attachmentId),
+    index('upload_sessions_owner_idx').on(table.ownerId),
+  ]
+)
+
 export const revokedAccessTokens = sqliteTable(
   'revoked_access_tokens',
   {

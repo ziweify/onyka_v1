@@ -13,6 +13,8 @@ import sparksRoutes from './sparks.routes.js'
 import usersRoutes from './users.routes.js'
 import adminRoutes from './admin.routes.js'
 import uploadsRoutes from './uploads.routes.js'
+import attachmentsRoutes from './attachments.routes.js'
+import noteAttachmentsRoutes from './note-attachments.routes.js'
 import exportRoutes from './export.routes.js'
 
 const router: RouterType = Router()
@@ -31,6 +33,8 @@ router.use('/sparks', sparksRoutes)
 router.use('/users', usersRoutes)
 router.use('/admin', adminRoutes)
 router.use('/uploads', uploadsRoutes)
+router.use('/attachments', attachmentsRoutes)
+router.use('/notes/:noteId/attachments', noteAttachmentsRoutes)
 router.use('/export', exportRoutes)
 
 export default router

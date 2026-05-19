@@ -3,6 +3,7 @@ import DOMPurify from 'isomorphic-dompurify'
 import { noteRepository } from '../repositories/note.repository.js'
 import { pageRepository } from '../repositories/page.repository.js'
 import { noteUploadRepository } from '../repositories/note-upload.repository.js'
+import { noteAttachmentRepository } from '../repositories/note-attachment.repository.js'
 import { searchService } from './search.service.js'
 import { slugifyHeading } from '../utils/slugify.js'
 import type { Note } from '@onyka/shared'
@@ -75,6 +76,7 @@ export class ImportService {
     })
 
     await noteUploadRepository.syncFromNoteContent(note.id, html)
+    await noteAttachmentRepository.syncFromNoteContent(note.id, html)
     searchService.indexNote(note)
 
     return note

@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import { db, schema } from '../db/index.js'
 import type { Share, ShareWithUser, Permission, ResourceType, ShareCreateInput } from '@onyka/shared'
 
-const { shares, users, notes, noteUploads } = schema
+const { shares, users, notes, noteUploads, noteAttachments } = schema
 
 export class ShareRepository {
   async findById(id: string): Promise<Share | null> {
@@ -212,6 +212,29 @@ export class ShareRepository {
    * True if `userId` can read at least one note that references this upload.
    * Ownership of the upload itself must be checked separately by the caller.
    */
+  async hasAccessToAttachment(userId: string, attachmentId: string): Promise<boolean> {
+    const result = await db
+      .select({ noteId: noteAttachments.noteId })
+      .from(noteAttachments)
+      .innerJoin(notes, eq(notes.id, noteAttachments.noteId))
+      .leftJoin(
+        shares,
+        and(
+          eq(shares.resourceId, notes.id),
+          eq(shares.resourceType, 'note'),
+          eq(shares.sharedWithId, userId)
+        )
+      )
+      .where(
+        and(
+          eq(noteAttachments.attachmentId, attachmentId),
+          or(eq(notes.ownerId, userId), eq(shares.sharedWithId, userId))
+        )
+      )
+      .limit(1)
+    return result.length > 0
+  }
+
   async hasAccessToUpload(userId: string, filename: string): Promise<boolean> {
     const result = await db
       .select({ noteId: noteUploads.noteId })

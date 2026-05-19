@@ -4,6 +4,7 @@ import { noteRepository } from '../repositories/note.repository.js'
 import { noteVersionRepository } from '../repositories/note-version.repository.js'
 import { shareRepository } from '../repositories/share.repository.js'
 import { noteUploadRepository } from '../repositories/note-upload.repository.js'
+import { noteAttachmentRepository } from '../repositories/note-attachment.repository.js'
 import { searchService } from './search.service.js'
 import { env } from '../config/env.js'
 import type {
@@ -114,6 +115,7 @@ export class PageVersionsService {
     }
 
     await noteUploadRepository.syncFromPage(version.noteId)
+    await noteAttachmentRepository.syncFromPage(version.noteId)
 
     await this.saveSnapshot({
       page: updated,

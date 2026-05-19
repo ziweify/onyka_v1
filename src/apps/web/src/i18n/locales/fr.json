@@ -280,6 +280,18 @@
     "action_restore": "Restauré",
     "no_page": "Impossible de charger la page. Enregistrez la note et réessayez."
   },
+  "attachments": {
+    "title": "Pièces jointes",
+    "empty": "Aucune pièce jointe. Déposez des fichiers ou cliquez pour envoyer.",
+    "drop_hint": "Déposez des fichiers ou parcourez (reprise possible)",
+    "upload": "Envoyer un fichier",
+    "download": "Télécharger",
+    "copy_link": "Copier le lien",
+    "cancel": "Annuler l'envoi",
+    "delete_confirm": "Supprimer cette pièce jointe ?",
+    "upload_failed": "Échec de l'envoi",
+    "file_changed": "Fichier modifié — veuillez renvoyer"
+  },
   "export": {
     "title": "Exporter",
     "format": "Format",

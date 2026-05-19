@@ -237,6 +237,7 @@ export function printStartupBanner(): void {
   console.log('\x1b[36m  ║\x1b[0m  This folder contains everything:                \x1b[36m║\x1b[0m')
   console.log('\x1b[36m  ║\x1b[0m    onyka.db         your notes & settings        \x1b[36m║\x1b[0m')
   console.log('\x1b[36m  ║\x1b[0m    uploads/          your images                 \x1b[36m║\x1b[0m')
+  console.log('\x1b[36m  ║\x1b[0m    attachments/      note file attachments       \x1b[36m║\x1b[0m')
   console.log('\x1b[36m  ║\x1b[0m    .encryption-key   decrypts your data          \x1b[36m║\x1b[0m')
   console.log('\x1b[36m  ║\x1b[0m    .jwt-secret       signs auth tokens           \x1b[36m║\x1b[0m')
   console.log('\x1b[36m  ║\x1b[0m                                                  \x1b[36m║\x1b[0m')

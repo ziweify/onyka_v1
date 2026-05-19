@@ -31,6 +31,9 @@ import type {
   SparkStats,
   SparksList,
   ExpirationOption,
+  Attachment,
+  UploadSessionInfo,
+  CreateUploadSessionInput,
 } from '@onyka/shared'
 
 const API_BASE = '/api'
@@ -903,6 +906,91 @@ export const uploadsApi = {
     request<void>(`/uploads/${filename}`, {
       method: 'DELETE',
     }),
+}
+
+export const attachmentsApi = {
+  list: (noteId: string) =>
+    request<{ attachments: Attachment[] }>(`/notes/${noteId}/attachments`),
+
+  createSession: (noteId: string, body: CreateUploadSessionInput) =>
+    request<{ session: UploadSessionInfo; attachment: Attachment }>(
+      `/notes/${noteId}/attachments/sessions`,
+      { method: 'POST', body: JSON.stringify(body) }
+    ),
+
+  resumeSession: (
+    noteId: string,
+    params: { fingerprint: string; originalName: string; totalSize: number }
+  ) => {
+    const q = new URLSearchParams({
+      fingerprint: params.fingerprint,
+      originalName: params.originalName,
+      totalSize: String(params.totalSize),
+    })
+    return request<{ session: UploadSessionInfo | null }>(
+      `/notes/${noteId}/attachments/sessions/resume?${q}`
+    )
+  },
+
+  uploadChunk: async (
+    noteId: string,
+    sessionId: string,
+    fingerprint: string,
+    start: number,
+    end: number,
+    total: number,
+    data: ArrayBuffer
+  ): Promise<{
+    receivedBytes: number
+    complete: boolean
+    attachment?: Attachment
+  }> => {
+    const response = await fetch(
+      `${API_BASE}/notes/${noteId}/attachments/sessions/${sessionId}/chunk`,
+      {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'Content-Range': `bytes=${start}-${end}/${total}`,
+          'X-Upload-Fingerprint': fingerprint,
+        },
+        body: data,
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({
+        error: { code: 'UPLOAD_FAILED', message: 'Upload failed' },
+      }))
+      throw new ApiException(
+        err.error?.code ?? 'UPLOAD_FAILED',
+        err.error?.message ?? 'Upload failed',
+        response.status
+      )
+    }
+
+    return response.json()
+  },
+
+  completeSession: (noteId: string, sessionId: string, fingerprint: string) =>
+    request<{ attachment: Attachment }>(
+      `/notes/${noteId}/attachments/sessions/${sessionId}/complete`,
+      { method: 'POST', body: JSON.stringify({ fingerprint }) }
+    ),
+
+  abortSession: (noteId: string, sessionId: string) =>
+    request<void>(`/notes/${noteId}/attachments/sessions/${sessionId}`, {
+      method: 'DELETE',
+    }),
+
+  delete: (attachmentId: string) =>
+    request<void>(`/attachments/${attachmentId}`, { method: 'DELETE' }),
+
+  downloadUrl: (attachmentId: string) =>
+    `${API_BASE}/attachments/${attachmentId}/download`,
+
+  copyLink: (attachmentId: string) => `onyka://attachment/${attachmentId}`,
 }
 
 export { request }

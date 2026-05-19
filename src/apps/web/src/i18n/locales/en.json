@@ -280,6 +280,18 @@
     "action_restore": "Restored",
     "no_page": "Could not load page data. Save the note and try again."
   },
+  "attachments": {
+    "title": "Attachments",
+    "empty": "No attachments yet. Drop files here or click upload.",
+    "drop_hint": "Drop files here or click to browse (resumable upload)",
+    "upload": "Upload file",
+    "download": "Download",
+    "copy_link": "Copy link",
+    "cancel": "Cancel upload",
+    "delete_confirm": "Delete this attachment?",
+    "upload_failed": "Upload failed",
+    "file_changed": "File changed — please upload again"
+  },
   "export": {
     "title": "Export",
     "format": "Format",

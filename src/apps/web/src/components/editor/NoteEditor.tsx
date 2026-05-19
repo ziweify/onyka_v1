@@ -19,6 +19,7 @@ import {
   IoPencilOutline,
   IoLogoMarkdown,
   IoListOutline,
+  IoAttachOutline,
 } from 'react-icons/io5'
 import type { Editor } from '@tiptap/react'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
@@ -28,11 +29,12 @@ import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
 import { MarkdownSourceEditor } from './MarkdownSourceEditor'
 import { DocumentOutline } from './DocumentOutline'
+import { NoteAttachmentsPanel } from './NoteAttachmentsPanel'
 import { PageTabs } from './PageTabs'
 import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
 import { ShareDialog, TagInput, NoteComments, ExportDialog, VersionHistoryDrawer } from '@/components/features'
 import { ThemeToggle } from '@/components/ui'
-import { notesApi, sharesApi, pagesApi } from '@/services/api'
+import { notesApi, sharesApi, pagesApi, attachmentsApi } from '@/services/api'
 import { useTagsStore } from '@/stores/tags'
 import { useNotesStore } from '@/stores/notes'
 import { useFoldersStore } from '@/stores/folders'
@@ -105,7 +107,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [markdownMode, setMarkdownMode] = useState(false)
-  const [showOutline, setShowOutline] = useState(true)
+  const [rightPanelTab, setRightPanelTab] = useState<'outline' | 'attachments' | null>('outline')
+  const [attachmentCount, setAttachmentCount] = useState(0)
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const pendingAnchorRef = useRef<string | null>(null)
@@ -113,6 +116,15 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [noteInfoExpanded, setNoteInfoExpanded] = useState(false)
   const [collaboratorCount, setCollaboratorCount] = useState(0)
   const optionsMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    void attachmentsApi
+      .list(note.id)
+      .then(({ attachments }) =>
+        setAttachmentCount(attachments.filter((a) => a.status === 'ready').length)
+      )
+      .catch(() => setAttachmentCount(0))
+  }, [note.id])
 
   const { createTag } = useTagsStore()
   const { folderTree, fetchFolderTree } = useFoldersStore()
@@ -651,6 +663,22 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                 <span>{formatNoteDate(note.createdAt, i18n.language)}</span>
                 <span className="opacity-30">·</span>
                 <span>{displayWordCount} {t('editor.info_words').toLowerCase()}</span>
+                {attachmentCount > 0 && (
+                  <>
+                    <span className="opacity-30">·</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
+                      }
+                      className="inline-flex items-center gap-0.5 hover:text-[var(--color-text-secondary)] transition-colors"
+                      title={t('attachments.title')}
+                    >
+                      <IoAttachOutline className="w-3 h-3" />
+                      {attachmentCount}
+                    </button>
+                  </>
+                )}
                 {!isCompact && (
                   <>
                     <span className="opacity-30">·</span>
@@ -684,17 +712,34 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     </button>
                   )}
                   {!markdownMode && (
-                    <button
-                      type="button"
-                      onClick={() => setShowOutline((o) => !o)}
-                      className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
-                        showOutline ? 'is-on' : ''
-                      }`}
-                      title={t('editor.outline_title')}
-                    >
-                      <IoListOutline className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{t('editor.outline_title')}</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRightPanelTab((tab) => (tab === 'outline' ? null : 'outline'))
+                        }
+                        className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
+                          rightPanelTab === 'outline' ? 'is-on' : ''
+                        }`}
+                        title={t('editor.outline_title')}
+                      >
+                        <IoListOutline className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{t('editor.outline_title')}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
+                        }
+                        className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
+                          rightPanelTab === 'attachments' ? 'is-on' : ''
+                        }`}
+                        title={t('attachments.title')}
+                      >
+                        <IoAttachOutline className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{t('attachments.title')}</span>
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
@@ -707,16 +752,32 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
               ) : (
                 <div className="flex items-center gap-2 max-w-[min(100%,20rem)]">
                   {!markdownMode && (
-                    <button
-                      type="button"
-                      onClick={() => setShowOutline((o) => !o)}
-                      className={`document-outline-toggle h-8 w-8 rounded-lg flex items-center justify-center border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 ${
-                        showOutline ? 'is-on' : ''
-                      }`}
-                      title={t('editor.outline_title')}
-                    >
-                      <IoListOutline className="w-3.5 h-3.5" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRightPanelTab((tab) => (tab === 'outline' ? null : 'outline'))
+                        }
+                        className={`document-outline-toggle h-8 w-8 rounded-lg flex items-center justify-center border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 ${
+                          rightPanelTab === 'outline' ? 'is-on' : ''
+                        }`}
+                        title={t('editor.outline_title')}
+                      >
+                        <IoListOutline className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
+                        }
+                        className={`document-outline-toggle h-8 w-8 rounded-lg flex items-center justify-center border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors shrink-0 ${
+                          rightPanelTab === 'attachments' ? 'is-on' : ''
+                        }`}
+                        title={t('attachments.title')}
+                      >
+                        <IoAttachOutline className="w-3.5 h-3.5" />
+                      </button>
+                    </>
                   )}
                   <button
                     type="button"
@@ -1085,12 +1146,31 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         </div>
       )}
       <div className="relative flex-1 min-h-0 flex flex-col">
-        {!markdownMode && showOutline && (
-          <DocumentOutline editor={editorInstance} open={showOutline} variant="sidebar" />
+        {!markdownMode && rightPanelTab === 'outline' && (
+          <DocumentOutline editor={editorInstance} open variant="sidebar" />
         )}
-        {!markdownMode && showOutline && (
+        {!markdownMode && rightPanelTab === 'attachments' && (
+          <NoteAttachmentsPanel
+            noteId={note.id}
+            canEdit={canEdit && !isPageLocked}
+            open
+            variant="sidebar"
+            onCountChange={setAttachmentCount}
+          />
+        )}
+        {!markdownMode && rightPanelTab && (
           <div className="document-outline-drawer-wrap lg:hidden px-3 py-2 shrink-0">
-            <DocumentOutline editor={editorInstance} open={showOutline} variant="drawer" />
+            {rightPanelTab === 'outline' ? (
+              <DocumentOutline editor={editorInstance} open variant="drawer" />
+            ) : (
+              <NoteAttachmentsPanel
+                noteId={note.id}
+                canEdit={canEdit && !isPageLocked}
+                open
+                variant="drawer"
+                onCountChange={setAttachmentCount}
+              />
+            )}
           </div>
         )}
         <div

@@ -36,6 +36,7 @@ import {
   IoRemoveOutline,
   IoImageOutline,
   IoGridOutline,
+  IoBookmarkOutline,
 } from 'react-icons/io5'
 
 const TextIcon = () => <span className="text-sm font-medium">¶</span>
@@ -65,6 +66,13 @@ export const SLASH_MENU_ITEMS: SlashMenuItem[] = [
   { id: 'image', labelKey: 'editor.image', descKey: 'editor.slash_menu.image_desc', icon: IoImageOutline, command: 'insertImage' },
   { id: 'table', labelKey: 'editor.table', descKey: 'editor.slash_menu.table_desc', icon: IoGridOutline, command: 'insertTable' },
   { id: 'columns', labelKey: 'editor.columns', descKey: 'editor.slash_menu.columns_desc', icon: ColumnsIcon, command: 'setColumns' },
+  {
+    id: 'outlineMarker',
+    labelKey: 'editor.outline_marker',
+    descKey: 'editor.slash_menu.outline_marker_desc',
+    icon: IoBookmarkOutline,
+    command: 'insertOutlineMarker',
+  },
 ]
 
 export const AlignLeftIcon = () => (

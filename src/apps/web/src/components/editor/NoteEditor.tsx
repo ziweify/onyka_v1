@@ -18,6 +18,7 @@ import {
   IoLockOpen,
   IoPencilOutline,
   IoLogoMarkdown,
+  IoListOutline,
 } from 'react-icons/io5'
 import type { Editor } from '@tiptap/react'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
@@ -26,7 +27,7 @@ import { useBreakpoint } from '@/hooks/useIsMobile'
 import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
 import { MarkdownSourceEditor } from './MarkdownSourceEditor'
-import { TableOfContents } from './TableOfContents'
+import { DocumentOutline } from './DocumentOutline'
 import { PageTabs } from './PageTabs'
 import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
 import { ShareDialog, TagInput, NoteComments, ExportDialog, VersionHistoryDrawer } from '@/components/features'
@@ -104,6 +105,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [markdownMode, setMarkdownMode] = useState(false)
+  const [showOutline, setShowOutline] = useState(true)
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
   const [showOptionsMenu, setShowOptionsMenu] = useState(false)
   const pendingAnchorRef = useRef<string | null>(null)
@@ -678,7 +680,22 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                       title={markdownMode ? t('editor.rich_mode') : t('editor.markdown_mode')}
                     >
                       <IoLogoMarkdown className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">{markdownMode ? 'MD' : 'MD'}</span>
+                      <span className="hidden sm:inline">MD</span>
+                    </button>
+                  )}
+                  {!markdownMode && (
+                    <button
+                      type="button"
+                      onClick={() => setShowOutline((o) => !o)}
+                      className={`h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border transition-colors ${
+                        showOutline
+                          ? 'border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+                          : 'border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'
+                      }`}
+                      title={t('editor.outline_title')}
+                    >
+                      <IoListOutline className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{t('editor.outline_title')}</span>
                     </button>
                   )}
                   <button
@@ -691,6 +708,20 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                 </>
               ) : (
                 <div className="flex items-center gap-2 max-w-[min(100%,20rem)]">
+                  {!markdownMode && (
+                    <button
+                      type="button"
+                      onClick={() => setShowOutline((o) => !o)}
+                      className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-colors shrink-0 ${
+                        showOutline
+                          ? 'border-[var(--color-accent)]/40 bg-[var(--color-accent)]/10 text-[var(--color-accent)]'
+                          : 'border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]'
+                      }`}
+                      title={t('editor.outline_title')}
+                    >
+                      <IoListOutline className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={handleEnterEditMode}
@@ -1058,7 +1089,14 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         </div>
       )}
       <div className="relative flex-1 min-h-0 flex flex-col">
-        {!markdownMode && !isReadOnly && <TableOfContents editor={editorInstance} />}
+        {!markdownMode && showOutline && (
+          <DocumentOutline editor={editorInstance} open={showOutline} variant="sidebar" />
+        )}
+        {!markdownMode && showOutline && (
+          <div className="lg:hidden border-t border-[var(--color-border-subtle)] bg-[var(--color-bg-secondary)] px-3 py-2 shrink-0">
+            <DocumentOutline editor={editorInstance} open={showOutline} variant="drawer" />
+          </div>
+        )}
         <div
           className={`editor-scroll-container editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pb-4 ${
             isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'

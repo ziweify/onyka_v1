@@ -194,6 +194,29 @@
   color: var(--color-text-primary);
 }
 
+.fluid-editor-content .outline-marker-block {
+  display: flex;
+  align-items: center;
+  margin: 0.75em 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px dashed var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  user-select: none;
+}
+
+.fluid-editor-content .outline-marker-chip {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  letter-spacing: 0.01em;
+}
+
+.fluid-editor[data-readonly='true'] .outline-marker-block {
+  border-style: solid;
+  opacity: 0.9;
+}
+
 .fluid-editor-content ul {
   margin: 0.5em 0;
   padding-left: 1.5em;

@@ -22,6 +22,7 @@ import { MarkdownTableInput } from './extensions/MarkdownTableInput'
 import { CodeBlockCopy } from './extensions/CodeBlockCopy'
 import { HeadingWithAnchor } from './extensions/HeadingWithAnchor'
 import { EditorLink } from './extensions/EditorLink'
+import { OutlineMarker } from './extensions/OutlineMarker'
 import { cleanMarkdownHtml, markdownToHtml } from '@/utils/htmlMarkdown'
 import { isAllowedLinkHref, isInPageAnchor, parseNoteLink } from '@/utils/noteLinks'
 import type { Editor } from '@tiptap/react'
@@ -279,6 +280,7 @@ export const FluidEditor = memo(function FluidEditor({
       }),
       HeadingWithAnchor,
       EditorLink,
+      OutlineMarker,
       CodeBlockCopy,
       Placeholder.configure({
         placeholder,
@@ -847,6 +849,9 @@ export const FluidEditor = memo(function FluidEditor({
         break
       case 'setColumns':
         chain.setColumns().run()
+        break
+      case 'insertOutlineMarker':
+        chain.insertOutlineMarker().run()
         break
     }
 

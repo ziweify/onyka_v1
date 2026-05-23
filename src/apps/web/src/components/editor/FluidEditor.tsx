@@ -241,6 +241,7 @@ export const FluidEditor = memo(function FluidEditor({
     filter: '',
     selectedIndex: 0,
   })
+  const executeSlashRef = useRef<(item: SlashMenuItem) => void>(() => {})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [selectedImageNode, setSelectedImageNode] = useState<ImageNodeState | null>(null)
@@ -562,7 +563,7 @@ export const FluidEditor = memo(function FluidEditor({
           }
           if (event.key === 'Enter' && filteredItems.length > 0) {
             event.preventDefault()
-            executeSlashCommand(filteredItems[slashUiRef.current.selectedIndex])
+            executeSlashRef.current(filteredItems[slashUiRef.current.selectedIndex])
             return true
           }
           if (event.key === 'Backspace' && filter === '') {
@@ -938,6 +939,10 @@ export const FluidEditor = memo(function FluidEditor({
     setShowSlashMenu(false)
     setSlashFilter('')
   }, [editor, slashFilter])
+
+  useEffect(() => {
+    executeSlashRef.current = executeSlashCommand
+  }, [executeSlashCommand])
 
   useEffect(() => {
     if (!editor) return

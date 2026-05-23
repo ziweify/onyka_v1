@@ -26,6 +26,48 @@ import { OutlineMarker } from './extensions/OutlineMarker'
 import { cleanMarkdownHtml, markdownToHtml } from '@/utils/htmlMarkdown'
 import { isAllowedLinkHref, isInPageAnchor, parseNoteLink } from '@/utils/noteLinks'
 import type { Editor } from '@tiptap/react'
+
+/** One paragraph/heading block at the cursor — avoids turning the whole doc into a heading. */
+function getCursorTextblockRange(editor: Editor): { from: number; to: number } {
+  const { $from } = editor.state.selection
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth)
+    if (node.isTextblock) {
+      return { from: $from.start(depth), to: $from.end(depth) }
+    }
+  }
+  return { from: $from.start(), to: $from.end() }
+}
+
+function findTextblockDepth($from: Editor['state']['selection']['$from']): number {
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth).isTextblock) return depth
+  }
+  return -1
+}
+
+/** Split at `/` when cursor is not at the start of a paragraph/heading. */
+function shouldSplitBeforeSlash($from: Editor['state']['selection']['$from']): boolean {
+  if ($from.parentOffset <= 0) return false
+  const depth = findTextblockDepth($from)
+  if (depth < 0) return false
+  const type = $from.node(depth).type.name
+  if (type !== 'paragraph' && type !== 'heading') return false
+  for (let d = depth; d > 0; d--) {
+    const name = $from.node(d).type.name
+    if (name === 'codeBlock' || name === 'table') return false
+  }
+  return true
+}
+
+function canOpenSlashMenu($from: Editor['state']['selection']['$from'], textBefore: string): boolean {
+  if (textBefore === ':' || textBefore === '/') return false
+  if (findTextblockDepth($from) < 0) return false
+  for (let d = $from.depth; d > 0; d--) {
+    if ($from.node(d).type.name === 'codeBlock') return false
+  }
+  return true
+}
 import { uploadsApi } from '@/services/api'
 import { SLASH_MENU_ITEMS, type SlashMenuItem } from './editorConstants'
 
@@ -268,6 +310,28 @@ export const FluidEditor = memo(function FluidEditor({
     }
   }, [])
 
+  const beginSlashMenu = useCallback(() => {
+    const ed = editorRef.current
+    if (ed) {
+      const { $from } = ed.state.selection
+      if (shouldSplitBeforeSlash($from)) {
+        ed.chain().focus().splitBlock().insertContent('/').run()
+      } else {
+        ed.chain().focus().insertContent('/').run()
+      }
+      const pos = ed.state.selection.from
+      const coords = ed.view.coordsAtPos(pos)
+      const editorRect = ed.view.dom.getBoundingClientRect()
+      setSlashMenuPosition({
+        top: coords.bottom - editorRect.top + 8,
+        left: coords.left - editorRect.left,
+      })
+    }
+    setShowSlashMenu(true)
+    setSlashFilter('')
+    setSelectedSlashIndex(0)
+  }, [])
+
   const editor = useEditor({
     immediatelyRender: true,
     shouldRerenderOnTransaction: false,
@@ -377,25 +441,13 @@ export const FluidEditor = memo(function FluidEditor({
       handleTextInput: (view, from, _to, text) => {
         if (text === '/' && !showSlashMenu) {
           const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '')
-          const isAfterColon = textBefore === ':'
-          const isAfterSlash = textBefore === '/'
-          const isInWord = textBefore && /[a-zA-Z0-9]/.test(textBefore)
-          const isValidContext = from === 1 || textBefore === '' || /\s/.test(textBefore)
-
-          if (isAfterColon || isAfterSlash || isInWord || !isValidContext) {
+          const { $from } = view.state.selection
+          if (!canOpenSlashMenu($from, textBefore)) {
             return false
           }
 
-          const coords = view.coordsAtPos(from)
-          const editorRect = view.dom.getBoundingClientRect()
-          setSlashMenuPosition({
-            top: coords.bottom - editorRect.top + 8,
-            left: coords.left - editorRect.left,
-          })
-          setShowSlashMenu(true)
-          setSlashFilter('')
-          setSelectedSlashIndex(0)
-          return false
+          beginSlashMenu()
+          return true
         }
 
         // While slash menu is open, capture typed characters as filter
@@ -414,26 +466,14 @@ export const FluidEditor = memo(function FluidEditor({
         if (event.key === '/' && !showSlashMenu) {
           const { from } = view.state.selection
           const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '')
-
-          const isAfterColon = textBefore === ':'
-          const isAfterSlash = textBefore === '/'
-          const isInWord = textBefore && /[a-zA-Z0-9]/.test(textBefore)
-          const isValidContext = from === 1 || textBefore === '' || /\s/.test(textBefore)
-
-          if (isAfterColon || isAfterSlash || isInWord || !isValidContext) {
+          const { $from } = view.state.selection
+          if (!canOpenSlashMenu($from, textBefore)) {
             return false
           }
 
-          const coords = view.coordsAtPos(from)
-          const editorRect = view.dom.getBoundingClientRect()
-          setSlashMenuPosition({
-            top: coords.bottom - editorRect.top + 8,
-            left: coords.left - editorRect.left,
-          })
-          setShowSlashMenu(true)
-          setSlashFilter('')
-          setSelectedSlashIndex(0)
-          return false
+          event.preventDefault()
+          beginSlashMenu()
+          return true
         }
 
         if (event.key === 'Tab') {
@@ -813,10 +853,26 @@ export const FluidEditor = memo(function FluidEditor({
     if (!editor) return
 
     const { from } = editor.state.selection
-    editor.chain().focus().deleteRange({ from: from - 1 - slashFilter.length, to: from }).run()
+    const slashFrom = Math.max(0, from - 1 - slashFilter.length)
+    editor.chain().focus().deleteRange({ from: slashFrom, to: from }).run()
 
+    const blockScoped =
+      item.command === 'setParagraph' || item.command === 'setHeading'
     const chain = editor.chain().focus()
+    if (blockScoped) {
+      chain.setTextSelection(getCursorTextblockRange(editor))
+    }
+
     switch (item.command) {
+      case 'splitParagraph': {
+        const { $from } = editor.state.selection
+        if (shouldSplitBeforeSlash($from)) {
+          chain.splitBlock().run()
+        } else {
+          chain.run()
+        }
+        break
+      }
       case 'setParagraph':
         chain.setParagraph().run()
         break

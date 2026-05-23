@@ -170,9 +170,11 @@
     "info_pages": "Pages",
     "info_tags": "Tags",
     "split_paragraph": "Scinder le paragraphe",
+    "delete_block": "Supprimer le bloc",
     "slash_menu": {
       "insert_block": "Insérer un bloc",
       "split_paragraph_desc": "Diviser en deux paragraphes au curseur",
+      "delete_block_desc": "Supprimer le bloc sous le curseur",
       "searching": "Recherche",
       "no_results": "Aucun résultat",
       "text_desc": "Paragraphe de texte simple",

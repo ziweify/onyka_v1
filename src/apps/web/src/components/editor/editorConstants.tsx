@@ -37,6 +37,7 @@ import {
   IoImageOutline,
   IoGridOutline,
   IoBookmarkOutline,
+  IoTrashOutline,
 } from 'react-icons/io5'
 
 const TextIcon = () => <span className="text-sm font-medium">¶</span>
@@ -67,6 +68,13 @@ export const SLASH_MENU_ITEMS: SlashMenuItem[] = [
     descKey: 'editor.slash_menu.split_paragraph_desc',
     icon: SplitParagraphIcon,
     command: 'splitParagraph',
+  },
+  {
+    id: 'deleteBlock',
+    labelKey: 'editor.delete_block',
+    descKey: 'editor.slash_menu.delete_block_desc',
+    icon: IoTrashOutline,
+    command: 'deleteBlock',
   },
   { id: 'paragraph', labelKey: 'editor.text', descKey: 'editor.slash_menu.text_desc', icon: TextIcon, command: 'setParagraph' },
   { id: 'h1', labelKey: 'editor.heading1', descKey: 'editor.slash_menu.heading1_desc', icon: H1Icon, command: 'setHeading', args: { level: 1 } },

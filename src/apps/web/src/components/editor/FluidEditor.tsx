@@ -42,6 +42,93 @@ function getCursorTextblockRange(editor: Editor): { from: number; to: number } {
   return { from: $from.start(), to: $from.end() }
 }
 
+/** Range of the structural block to remove via / → 删除块. */
+function getBlockDeleteRange(editor: Editor): { from: number; to: number } | null {
+  const { $from } = editor.state.selection
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const name = $from.node(depth).type.name
+    if (name === 'listItem' || name === 'taskItem') {
+      return { from: $from.before(depth), to: $from.after(depth) }
+    }
+  }
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth - 1).type.name === 'blockquote') {
+      return { from: $from.before(depth), to: $from.after(depth) }
+    }
+  }
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const name = $from.node(depth).type.name
+    if (name === 'table' || name === 'columns') {
+      return { from: $from.before(depth), to: $from.after(depth) }
+    }
+  }
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth - 1).type.name === 'doc') {
+      return { from: $from.before(depth), to: $from.after(depth) }
+    }
+  }
+
+  return null
+}
+
+function deleteCurrentBlock(editor: Editor) {
+  const range = getBlockDeleteRange(editor)
+  if (!range) return
+
+  const { doc } = editor.state
+  const { from, to } = range
+
+  if (doc.childCount === 1 && from === 0 && to >= doc.content.size) {
+    editor.chain().focus().clearContent().run()
+    return
+  }
+
+  editor.chain().focus().deleteRange({ from, to }).run()
+}
+
+function isAtTextblockStart(editor: Editor): boolean {
+  const { $from, empty } = editor.state.selection
+  if (!empty) return false
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth).isTextblock) {
+      return $from.pos === $from.start(depth)
+    }
+  }
+  return false
+}
+
+/** Backspace at line start: delete empty/special blocks (same as / → 删除块). */
+function shouldDeleteBlockOnBackspace(editor: Editor): boolean {
+  if (!isAtTextblockStart(editor)) return false
+
+  if (editor.isActive('table') || editor.isActive('column')) return false
+
+  const { $from } = editor.state.selection
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const name = $from.node(depth).type.name
+    if (name === 'listItem' || name === 'taskItem') {
+      return $from.node(depth).textContent.length === 0
+    }
+  }
+
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth).isTextblock) {
+      const block = $from.node(depth)
+      if (block.content.size === 0) return true
+      const name = block.type.name
+      return name === 'heading' || name === 'codeBlock'
+    }
+  }
+
+  return false
+}
+
 /** Original slash-menu trigger rules (attachment-system version). */
 function shouldOpenSlashMenu(from: number, textBefore: string): boolean {
   const isAfterColon = textBefore === ':'
@@ -198,6 +285,54 @@ function looksLikeMarkdown(text: string): boolean {
   return mdScore >= 2
 }
 
+/** Paste target: plain body paragraph vs special blocks (code, list, etc.). */
+function getPasteTarget(editor: Editor): 'body' | 'code' | 'other' {
+  if (editor.isActive('codeBlock')) return 'code'
+  if (
+    editor.isActive('heading') ||
+    editor.isActive('bulletList') ||
+    editor.isActive('orderedList') ||
+    editor.isActive('taskList') ||
+    editor.isActive('blockquote') ||
+    editor.isActive('table') ||
+    editor.isActive('columns')
+  ) {
+    return 'other'
+  }
+  if (editor.isActive('paragraph')) return 'body'
+  return 'other'
+}
+
+/** Clipboard HTML that would become a single code block (IDE/terminal copy). */
+function htmlIsCodeOnly(html: string): boolean {
+  const trimmed = html.trim()
+  if (!trimmed) return false
+  try {
+    const doc = new DOMParser().parseFromString(trimmed, 'text/html')
+    const { body } = doc
+    if (body.querySelectorAll('pre').length === 0) return false
+    if (body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, table').length > 0) {
+      return false
+    }
+    return true
+  } catch {
+    return /^<pre[\s>]/i.test(trimmed)
+  }
+}
+
+/** Insert plain text as one paragraph per line (正文), not as code/heading blocks. */
+function pastePlainTextAsBodyParagraphs(editor: Editor, plainText: string) {
+  const normalized = plainText.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  if (!normalized) return
+
+  const nodes = normalized.split('\n').map((line) => ({
+    type: 'paragraph' as const,
+    ...(line.length > 0 ? { content: [{ type: 'text' as const, text: line }] } : {}),
+  }))
+
+  editor.chain().focus().insertContent(nodes).run()
+}
+
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { SlashMenu } from './SlashMenu'
 import { ImageToolbar, type ImageNodeState } from './ImageToolbar'
@@ -231,6 +366,7 @@ export const FluidEditor = memo(function FluidEditor({
   const [selectedSlashIndex, setSelectedSlashIndex] = useState(0)
   const slashMenuRef = useRef<HTMLDivElement>(null)
   const slashUiRef = useRef({ show: false, filter: '', selectedIndex: 0 })
+  const modifiersRef = useRef({ shift: false })
   const executeSlashRef = useRef<(item: SlashMenuItem) => void>(() => {})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
@@ -445,6 +581,8 @@ export const FluidEditor = memo(function FluidEditor({
         return false
       },
       handleKeyDown: (view, event) => {
+        modifiersRef.current.shift = event.shiftKey
+
         if (event.key === '/' && !slashUiRef.current.show && !event.isComposing) {
           const { from } = view.state.selection
           const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '')
@@ -458,6 +596,15 @@ export const FluidEditor = memo(function FluidEditor({
             setSelectedSlashIndex(0)
           })
           return false
+        }
+
+        if (event.key === 'Backspace' && !slashUiRef.current.show && !event.isComposing) {
+          const editorInstance = editorRef.current
+          if (editorInstance && shouldDeleteBlockOnBackspace(editorInstance)) {
+            event.preventDefault()
+            deleteCurrentBlock(editorInstance)
+            return true
+          }
         }
 
         if (event.key === 'Tab') {
@@ -576,14 +723,36 @@ export const FluidEditor = memo(function FluidEditor({
           }
         }
 
-        // Handle markdown paste: if no HTML is present and plain text looks like markdown
         const html = clipboardData.getData('text/html')
         const plainText = clipboardData.getData('text/plain')
-        if (!html && plainText && looksLikeMarkdown(plainText)) {
-          event.preventDefault()
-          const convertedHtml = markdownToHtml(plainText)
-          editorRef.current?.commands.insertContent(convertedHtml)
-          return true
+        const editorInstance = editorRef.current
+
+        if (editorInstance && plainText) {
+          const pasteTarget = getPasteTarget(editorInstance)
+          const richPaste = modifiersRef.current.shift
+
+          // 正文段落：默认按纯文本分行成多个段落，避免整段进代码块/标题块
+          if (pasteTarget === 'body' && !richPaste) {
+            if (!html || htmlIsCodeOnly(html)) {
+              event.preventDefault()
+              pastePlainTextAsBodyParagraphs(editorInstance, plainText)
+              return true
+            }
+          }
+
+          // Shift+粘贴：在正文中保留 Markdown 解析（标题、列表等）
+          if (pasteTarget === 'body' && richPaste && !html && looksLikeMarkdown(plainText)) {
+            event.preventDefault()
+            editorInstance.commands.insertContent(markdownToHtml(plainText))
+            return true
+          }
+
+          // 特殊块内：仍可按 Markdown 解析纯文本
+          if (pasteTarget !== 'body' && !html && looksLikeMarkdown(plainText)) {
+            event.preventDefault()
+            editorInstance.commands.insertContent(markdownToHtml(plainText))
+            return true
+          }
         }
 
         return false
@@ -850,6 +1019,9 @@ export const FluidEditor = memo(function FluidEditor({
       case 'splitParagraph':
         chain.splitBlock().run()
         break
+      case 'deleteBlock':
+        deleteCurrentBlock(editor)
+        break
       case 'setParagraph':
         chain.setParagraph().run()
         break
@@ -945,6 +1117,31 @@ export const FluidEditor = memo(function FluidEditor({
   }, [showSlashMenu])
 
   const { containerRef } = useSmoothCaret(editor, true)
+
+  // Click anywhere on the writing surface (padding / empty canvas) to focus the editor.
+  useEffect(() => {
+    if (!editor || readOnly) return
+
+    const surface = containerRef.current?.closest('.editor-writing-surface')
+    if (!surface) return
+
+    const onPointerDown = (event: Event) => {
+      const target = event.target as HTMLElement | null
+      if (!target || !surface.contains(target)) return
+      if (target.closest('.ProseMirror')) return
+      if (target.closest('button, a, input, textarea, [role="menu"]')) return
+
+      event.preventDefault()
+      editor.chain().focus('end').run()
+    }
+
+    surface.addEventListener('mousedown', onPointerDown)
+    surface.addEventListener('touchstart', onPointerDown, { passive: false })
+    return () => {
+      surface.removeEventListener('mousedown', onPointerDown)
+      surface.removeEventListener('touchstart', onPointerDown)
+    }
+  }, [editor, readOnly, containerRef])
 
   const handleFileInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -66,17 +66,6 @@ function openSlashMenuAt(
   onOpen()
 }
 
-/** Split at `/` after the browser inserts it — must not run before `return false`. */
-function scheduleSplitAtSlash(editorRef: { current: Editor | null }) {
-  queueMicrotask(() => {
-    const ed = editorRef.current
-    if (!ed) return
-    const { from } = ed.state.selection
-    if (from <= 1) return
-    ed.chain().focus().setTextSelection(from - 1).splitBlock().run()
-  })
-}
-
 /** Serialize a ProseMirror node tree to clean plain text for clipboard export.
  *  Handles lists (bullets, numbers, tasks), blockquotes, headings, code blocks,
  *  tables, and normalizes French guillemets (replaces \u00A0 with regular spaces). */
@@ -435,13 +424,11 @@ export const FluidEditor = memo(function FluidEditor({
             return false
           }
 
-          const autoSplit = view.state.selection.$from.parentOffset > 0
           openSlashMenuAt(view, from, setSlashMenuPosition, () => {
             setShowSlashMenu(true)
             setSlashFilter('')
             setSelectedSlashIndex(0)
           })
-          if (autoSplit) scheduleSplitAtSlash(editorRef)
           return false
         }
 
@@ -465,13 +452,11 @@ export const FluidEditor = memo(function FluidEditor({
             return false
           }
 
-          const autoSplit = view.state.selection.$from.parentOffset > 0
           openSlashMenuAt(view, from, setSlashMenuPosition, () => {
             setShowSlashMenu(true)
             setSlashFilter('')
             setSelectedSlashIndex(0)
           })
-          if (autoSplit) scheduleSplitAtSlash(editorRef)
           return false
         }
 

@@ -169,8 +169,10 @@
     "info_characters": "Caractères",
     "info_pages": "Pages",
     "info_tags": "Tags",
+    "split_paragraph": "Scinder le paragraphe",
     "slash_menu": {
       "insert_block": "Insérer un bloc",
+      "split_paragraph_desc": "Diviser en deux paragraphes au curseur",
       "searching": "Recherche",
       "no_results": "Aucun résultat",
       "text_desc": "Paragraphe de texte simple",

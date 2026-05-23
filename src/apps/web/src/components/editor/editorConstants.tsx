@@ -52,7 +52,22 @@ export const ColumnsIcon = () => (
   </svg>
 )
 
+const SplitParagraphIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <line x1="2" y1="4" x2="14" y2="4" />
+    <line x1="2" y1="12" x2="14" y2="12" />
+    <path d="M8 4v8" strokeDasharray="2 2" />
+  </svg>
+)
+
 export const SLASH_MENU_ITEMS: SlashMenuItem[] = [
+  {
+    id: 'splitParagraph',
+    labelKey: 'editor.split_paragraph',
+    descKey: 'editor.slash_menu.split_paragraph_desc',
+    icon: SplitParagraphIcon,
+    command: 'splitParagraph',
+  },
   { id: 'paragraph', labelKey: 'editor.text', descKey: 'editor.slash_menu.text_desc', icon: TextIcon, command: 'setParagraph' },
   { id: 'h1', labelKey: 'editor.heading1', descKey: 'editor.slash_menu.heading1_desc', icon: H1Icon, command: 'setHeading', args: { level: 1 } },
   { id: 'h2', labelKey: 'editor.heading2', descKey: 'editor.slash_menu.heading2_desc', icon: H2Icon, command: 'setHeading', args: { level: 2 } },

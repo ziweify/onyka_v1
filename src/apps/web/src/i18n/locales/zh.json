@@ -169,8 +169,10 @@
     "info_characters": "字数",
     "info_pages": "页面",
     "info_tags": "标签",
+    "split_paragraph": "拆分段落",
     "slash_menu": {
       "insert_block": "插入块",
+      "split_paragraph_desc": "从光标处拆成上下两个段落",
       "searching": "搜索中",
       "no_results": "未找到结果",
       "text_desc": "纯文本段落",

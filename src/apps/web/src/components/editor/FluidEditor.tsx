@@ -26,49 +26,6 @@ import { OutlineMarker } from './extensions/OutlineMarker'
 import { cleanMarkdownHtml, markdownToHtml } from '@/utils/htmlMarkdown'
 import { isAllowedLinkHref, isInPageAnchor, parseNoteLink } from '@/utils/noteLinks'
 import type { Editor } from '@tiptap/react'
-
-/** One paragraph/heading block at the cursor — avoids turning the whole doc into a heading. */
-function getCursorTextblockRange(editor: Editor): { from: number; to: number } {
-  const { $from } = editor.state.selection
-  for (let depth = $from.depth; depth > 0; depth--) {
-    const node = $from.node(depth)
-    if (node.isTextblock) {
-      return { from: $from.start(depth), to: $from.end(depth) }
-    }
-  }
-  return { from: $from.start(), to: $from.end() }
-}
-
-function findTextblockDepth($from: Editor['state']['selection']['$from']): number {
-  if ($from.parent.isTextblock) return $from.depth
-  for (let depth = $from.depth; depth > 0; depth--) {
-    if ($from.node(depth).isTextblock) return depth
-  }
-  return -1
-}
-
-/** Split at `/` when cursor is not at the start of a paragraph/heading. */
-function shouldSplitBeforeSlash($from: Editor['state']['selection']['$from']): boolean {
-  if ($from.parentOffset <= 0) return false
-  const depth = findTextblockDepth($from)
-  if (depth < 0) return false
-  const type = $from.node(depth).type.name
-  if (type !== 'paragraph' && type !== 'heading') return false
-  for (let d = depth; d > 0; d--) {
-    const name = $from.node(d).type.name
-    if (name === 'codeBlock' || name === 'table') return false
-  }
-  return true
-}
-
-function canOpenSlashMenu($from: Editor['state']['selection']['$from'], textBefore: string): boolean {
-  if (textBefore === ':' || textBefore === '/') return false
-  if (findTextblockDepth($from) < 0) return false
-  for (let d = $from.depth; d > 0; d--) {
-    if ($from.node(d).type.name === 'codeBlock') return false
-  }
-  return true
-}
 import { uploadsApi } from '@/services/api'
 import { SLASH_MENU_ITEMS, type SlashMenuItem } from './editorConstants'
 
@@ -236,12 +193,6 @@ export const FluidEditor = memo(function FluidEditor({
   const [slashFilter, setSlashFilter] = useState('')
   const [selectedSlashIndex, setSelectedSlashIndex] = useState(0)
   const slashMenuRef = useRef<HTMLDivElement>(null)
-  const slashUiRef = useRef({
-    show: false,
-    filter: '',
-    selectedIndex: 0,
-  })
-  const executeSlashRef = useRef<(item: SlashMenuItem) => void>(() => {})
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [selectedImageNode, setSelectedImageNode] = useState<ImageNodeState | null>(null)
@@ -316,45 +267,6 @@ export const FluidEditor = memo(function FluidEditor({
       setIsUploadingImage(false)
     }
   }, [])
-
-  const beginSlashMenu = useCallback((view?: import('@tiptap/pm/view').EditorView) => {
-    slashUiRef.current = { show: true, filter: '', selectedIndex: 0 }
-    setShowSlashMenu(true)
-    setSlashFilter('')
-    setSelectedSlashIndex(0)
-
-    const ed = editorRef.current
-    if (!ed) return
-
-    try {
-      const { $from } = ed.state.selection
-      ed.commands.focus()
-      if (shouldSplitBeforeSlash($from)) {
-        ed.commands.splitBlock()
-      }
-      ed.commands.insertContent('/')
-
-      const v = view ?? ed.view
-      const docSize = v.state.doc.content.size
-      const pos = Math.max(1, Math.min(ed.state.selection.from, Math.max(1, docSize - 1)))
-      const coords = v.coordsAtPos(pos)
-      const editorRect = v.dom.getBoundingClientRect()
-      setSlashMenuPosition({
-        top: coords.bottom - editorRect.top + 8,
-        left: coords.left - editorRect.left,
-      })
-    } catch {
-      setSlashMenuPosition({ top: 48, left: 24 })
-    }
-  }, [])
-
-  useEffect(() => {
-    slashUiRef.current = {
-      show: showSlashMenu,
-      filter: slashFilter,
-      selectedIndex: selectedSlashIndex,
-    }
-  }, [showSlashMenu, slashFilter, selectedSlashIndex])
 
   const editor = useEditor({
     immediatelyRender: true,
@@ -463,19 +375,31 @@ export const FluidEditor = memo(function FluidEditor({
       },
       // Mobile/tablet: virtual keyboards fire handleTextInput, not handleKeyDown for '/'
       handleTextInput: (view, from, _to, text) => {
-        if (text === '/' && !slashUiRef.current.show) {
+        if (text === '/' && !showSlashMenu) {
           const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '')
-          const { $from } = view.state.selection
-          if (!canOpenSlashMenu($from, textBefore)) {
+          const isAfterColon = textBefore === ':'
+          const isAfterSlash = textBefore === '/'
+          const isInWord = textBefore && /[a-zA-Z0-9]/.test(textBefore)
+          const isValidContext = from === 1 || textBefore === '' || /\s/.test(textBefore)
+
+          if (isAfterColon || isAfterSlash || isInWord || !isValidContext) {
             return false
           }
 
-          beginSlashMenu(view)
-          return true
+          const coords = view.coordsAtPos(from)
+          const editorRect = view.dom.getBoundingClientRect()
+          setSlashMenuPosition({
+            top: coords.bottom - editorRect.top + 8,
+            left: coords.left - editorRect.left,
+          })
+          setShowSlashMenu(true)
+          setSlashFilter('')
+          setSelectedSlashIndex(0)
+          return false
         }
 
         // While slash menu is open, capture typed characters as filter
-        if (slashUiRef.current.show && text.length === 1 && text !== '/') {
+        if (showSlashMenu && text.length === 1 && text !== '/') {
           if (text === ' ') {
             setShowSlashMenu(false)
             return false
@@ -487,17 +411,29 @@ export const FluidEditor = memo(function FluidEditor({
         return false
       },
       handleKeyDown: (view, event) => {
-        if (event.key === '/' && !slashUiRef.current.show) {
+        if (event.key === '/' && !showSlashMenu) {
           const { from } = view.state.selection
           const textBefore = view.state.doc.textBetween(Math.max(0, from - 1), from, '')
-          const { $from } = view.state.selection
-          if (!canOpenSlashMenu($from, textBefore)) {
+
+          const isAfterColon = textBefore === ':'
+          const isAfterSlash = textBefore === '/'
+          const isInWord = textBefore && /[a-zA-Z0-9]/.test(textBefore)
+          const isValidContext = from === 1 || textBefore === '' || /\s/.test(textBefore)
+
+          if (isAfterColon || isAfterSlash || isInWord || !isValidContext) {
             return false
           }
 
-          event.preventDefault()
-          beginSlashMenu(view)
-          return true
+          const coords = view.coordsAtPos(from)
+          const editorRect = view.dom.getBoundingClientRect()
+          setSlashMenuPosition({
+            top: coords.bottom - editorRect.top + 8,
+            left: coords.left - editorRect.left,
+          })
+          setShowSlashMenu(true)
+          setSlashFilter('')
+          setSelectedSlashIndex(0)
+          return false
         }
 
         if (event.key === 'Tab') {
@@ -534,8 +470,7 @@ export const FluidEditor = memo(function FluidEditor({
           return true
         }
 
-        if (slashUiRef.current.show) {
-          const filter = slashUiRef.current.filter
+        if (showSlashMenu) {
           if (event.key === ' ') {
             setShowSlashMenu(false)
             return false
@@ -543,8 +478,8 @@ export const FluidEditor = memo(function FluidEditor({
 
           const filteredItems = SLASH_MENU_ITEMS.filter(
             (item) =>
-              t(item.labelKey).toLowerCase().includes(filter.toLowerCase()) ||
-              t(item.descKey).toLowerCase().includes(filter.toLowerCase())
+              t(item.labelKey).toLowerCase().includes(slashFilter.toLowerCase()) ||
+              t(item.descKey).toLowerCase().includes(slashFilter.toLowerCase())
           )
 
           if (event.key === 'Escape') {
@@ -563,14 +498,14 @@ export const FluidEditor = memo(function FluidEditor({
           }
           if (event.key === 'Enter' && filteredItems.length > 0) {
             event.preventDefault()
-            executeSlashRef.current(filteredItems[slashUiRef.current.selectedIndex])
+            executeSlashCommand(filteredItems[selectedSlashIndex])
             return true
           }
-          if (event.key === 'Backspace' && filter === '') {
+          if (event.key === 'Backspace' && slashFilter === '') {
             setShowSlashMenu(false)
             return false
           }
-          if (event.key === 'Backspace' && filter.length > 0) {
+          if (event.key === 'Backspace' && slashFilter.length > 0) {
             setSlashFilter((f) => f.slice(0, -1))
             setSelectedSlashIndex(0)
           }
@@ -878,26 +813,10 @@ export const FluidEditor = memo(function FluidEditor({
     if (!editor) return
 
     const { from } = editor.state.selection
-    const slashFrom = Math.max(0, from - 1 - slashFilter.length)
-    editor.chain().focus().deleteRange({ from: slashFrom, to: from }).run()
+    editor.chain().focus().deleteRange({ from: from - 1 - slashFilter.length, to: from }).run()
 
-    const blockScoped =
-      item.command === 'setParagraph' || item.command === 'setHeading'
     const chain = editor.chain().focus()
-    if (blockScoped) {
-      chain.setTextSelection(getCursorTextblockRange(editor))
-    }
-
     switch (item.command) {
-      case 'splitParagraph': {
-        const { $from } = editor.state.selection
-        if (shouldSplitBeforeSlash($from)) {
-          chain.splitBlock().run()
-        } else {
-          chain.run()
-        }
-        break
-      }
       case 'setParagraph':
         chain.setParagraph().run()
         break
@@ -939,10 +858,6 @@ export const FluidEditor = memo(function FluidEditor({
     setShowSlashMenu(false)
     setSlashFilter('')
   }, [editor, slashFilter])
-
-  useEffect(() => {
-    executeSlashRef.current = executeSlashCommand
-  }, [executeSlashCommand])
 
   useEffect(() => {
     if (!editor) return

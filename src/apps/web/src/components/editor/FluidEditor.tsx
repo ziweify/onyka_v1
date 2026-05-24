@@ -300,37 +300,56 @@ function getPasteTarget(editor: Editor): 'body' | 'code' | 'other' {
     return 'other'
   }
   if (editor.isActive('paragraph')) return 'body'
+
+  const { $from } = editor.state.selection
+  for (let depth = $from.depth; depth > 0; depth--) {
+    if ($from.node(depth).type.name === 'paragraph') return 'body'
+  }
   return 'other'
 }
 
-/** Clipboard HTML that would become a single code block (IDE/terminal copy). */
-function htmlIsCodeOnly(html: string): boolean {
-  const trimmed = html.trim()
-  if (!trimmed) return false
-  try {
-    const doc = new DOMParser().parseFromString(trimmed, 'text/html')
-    const { body } = doc
-    if (body.querySelectorAll('pre').length === 0) return false
-    if (body.querySelectorAll('p, h1, h2, h3, h4, h5, h6, ul, ol, table').length > 0) {
-      return false
-    }
-    return true
-  } catch {
-    return /^<pre[\s>]/i.test(trimmed)
-  }
-}
-
-/** Insert plain text as one paragraph per line (正文), not as code/heading blocks. */
+/** Insert plain text as body paragraphs — never as code/heading blocks. */
 function pastePlainTextAsBodyParagraphs(editor: Editor, plainText: string) {
   const normalized = plainText.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
   if (!normalized) return
 
-  const nodes = normalized.split('\n').map((line) => ({
+  const { $from } = editor.state.selection
+
+  if (!normalized.includes('\n')) {
+    editor.chain().focus().insertContent(normalized).run()
+    return
+  }
+
+  const lines = normalized.split('\n')
+  const nodes = lines.map((line) => ({
     type: 'paragraph' as const,
     ...(line.length > 0 ? { content: [{ type: 'text' as const, text: line }] } : {}),
   }))
 
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth)
+    if (node.type.name === 'paragraph' && node.content.size === 0) {
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from: $from.before(depth), to: $from.after(depth) })
+        .insertContent(nodes)
+        .run()
+      return
+    }
+  }
+
   editor.chain().focus().insertContent(nodes).run()
+}
+
+function plainTextFromClipboard(html: string, plainText: string): string {
+  if (plainText.trim()) return plainText
+  if (!html.trim()) return plainText
+  try {
+    return new DOMParser().parseFromString(html, 'text/html').body.innerText
+  } catch {
+    return plainText
+  }
 }
 
 import { EditorBubbleMenu } from './EditorBubbleMenu'
@@ -727,30 +746,29 @@ export const FluidEditor = memo(function FluidEditor({
         const plainText = clipboardData.getData('text/plain')
         const editorInstance = editorRef.current
 
-        if (editorInstance && plainText) {
+        if (editorInstance) {
           const pasteTarget = getPasteTarget(editorInstance)
           const richPaste = modifiersRef.current.shift
+          const text = plainTextFromClipboard(html, plainText)
 
-          // 正文段落：默认按纯文本分行成多个段落，避免整段进代码块/标题块
-          if (pasteTarget === 'body' && !richPaste) {
-            if (!html || htmlIsCodeOnly(html)) {
-              event.preventDefault()
-              pastePlainTextAsBodyParagraphs(editorInstance, plainText)
-              return true
-            }
+          // 正文：默认一律纯文本粘贴（忽略 HTML，避免变代码块/标题块）
+          if (pasteTarget === 'body' && !richPaste && text) {
+            event.preventDefault()
+            pastePlainTextAsBodyParagraphs(editorInstance, text)
+            return true
           }
 
           // Shift+粘贴：在正文中保留 Markdown 解析（标题、列表等）
-          if (pasteTarget === 'body' && richPaste && !html && looksLikeMarkdown(plainText)) {
+          if (pasteTarget === 'body' && richPaste && !html && looksLikeMarkdown(text)) {
             event.preventDefault()
-            editorInstance.commands.insertContent(markdownToHtml(plainText))
+            editorInstance.commands.insertContent(markdownToHtml(text))
             return true
           }
 
           // 特殊块内：仍可按 Markdown 解析纯文本
-          if (pasteTarget !== 'body' && !html && looksLikeMarkdown(plainText)) {
+          if (pasteTarget !== 'body' && !html && text && looksLikeMarkdown(text)) {
             event.preventDefault()
-            editorInstance.commands.insertContent(markdownToHtml(plainText))
+            editorInstance.commands.insertContent(markdownToHtml(text))
             return true
           }
         }

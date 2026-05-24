@@ -45,8 +45,10 @@ import {
   sortItemsAlphabetically,
   makeDragId,
   ROOT_DROP_ID,
+  findNoteById,
 } from './sidebar/index'
 import { getAvatarRingClass } from '@/utils/avatar'
+import { getFolderAncestorIds } from '@/utils/notePath'
 import { useIsMobile } from '@/hooks'
 
 function filterNotesByTags(
@@ -182,6 +184,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const localSearchRef = useRef<HTMLInputElement>(null)
   const searchRef = searchInputRef || localSearchRef
   const isSearchActive = searchQuery.length > 0
+  const sidebarNavRef = useRef<HTMLElement>(null)
   const {
     folderTree,
     rootNotes,
@@ -189,6 +192,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     fetchFolderTree,
     expandedFolders,
     toggleFolderExpanded,
+    expandFolders,
     createFolder,
     updateFolder,
     deleteFolder,
@@ -235,6 +239,48 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const [removingNoteIds, setRemovingNoteIds] = useState<Set<string>>(new Set())
   const [newFolderId, setNewFolderId] = useState<string | null>(null)
   const [removingFolderIds, setRemovingFolderIds] = useState<Set<string>>(new Set())
+
+  const scrollSidebarToNote = useCallback((noteId: string) => {
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const nav = sidebarNavRef.current
+        if (!nav) return
+        const el = nav.querySelector(`[data-note-id="${CSS.escape(noteId)}"]`)
+        el?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+      })
+    })
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selectedNoteId || isSearchActive) return
+
+    if (sidebarCollapsed && !isMobile && !focusMode) {
+      toggleSidebar()
+      return
+    }
+
+    const found = findNoteById(folderTree, rootNotes, selectedNoteId)
+    if (!found) return
+
+    expandFolders(getFolderAncestorIds(folderTree, found.folderId))
+    return scrollSidebarToNote(selectedNoteId)
+  }, [
+    selectedNoteId,
+    folderTree,
+    rootNotes,
+    isSearchActive,
+    sidebarCollapsed,
+    isMobile,
+    focusMode,
+    toggleSidebar,
+    expandFolders,
+    scrollSidebarToNote,
+  ])
 
   const {
     sensors,
@@ -858,6 +904,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
       )}
 
       <nav
+        ref={sidebarNavRef}
         className="flex-1 overflow-y-auto px-2 scrollbar-none min-h-0"
         aria-label={isSearchActive ? t('search.results') : t('sidebar.file_tree')}
       >

@@ -1,5 +1,40 @@
 /* Dark */
 
+/* Cursor IDE — VS Code Dark+ inspired */
+.theme-cursor.dark {
+  --color-bg-primary: #181818;
+  --color-bg-secondary: #1e1e1e;
+  --color-bg-tertiary: #252526;
+  --color-bg-elevated: #2d2d2d;
+  --color-bg-glass: rgba(24, 24, 24, 0.92);
+  --color-bg-glass-subtle: rgba(30, 30, 30, 0.85);
+  --color-bg-floating: rgba(24, 24, 24, 0.55);
+  --color-border-floating: rgba(255, 255, 255, 0.08);
+  --shadow-floating: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.45);
+  --blur-floating: 22px;
+  --color-text-primary: #cccccc;
+  --color-text-secondary: #9d9d9d;
+  --color-text-tertiary: #6e6e6e;
+  --color-text-muted: #858585;
+  --color-text-inverse: #181818;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-accent: #3794ff;
+  --color-accent-hover: #4da3ff;
+  --color-accent-muted: rgba(55, 148, 255, 0.18);
+  --color-accent-glow: rgba(55, 148, 255, 0.28);
+  --color-accent-subtle: rgba(55, 148, 255, 0.1);
+  --editor-code-bg: #1e1e1e;
+  --editor-code-fg: #d4d4d4;
+  --editor-code-inline-bg: rgba(255, 255, 255, 0.08);
+  --editor-code-inline-fg: #e394dc;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+
 /* Dracula - Popular purple-tinted dark theme */
 .theme-dracula.dark {
   --color-bg-primary: #282a36;

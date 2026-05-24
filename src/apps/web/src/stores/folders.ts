@@ -24,6 +24,7 @@ interface FoldersState {
   reorderNote: (noteId: string, newFolderId: string | null, newPosition: number) => Promise<void>
   selectFolder: (id: string | null) => void
   toggleFolderExpanded: (id: string) => void
+  expandFolders: (ids: string[]) => void
   clearError: () => void
   setNewNoteId: (id: string | null) => void
   triggerNewNoteInput: () => void
@@ -168,6 +169,20 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
         expanded.add(id)
       }
       return { expandedFolders: expanded }
+    }),
+
+  expandFolders: (ids) =>
+    set((state) => {
+      if (ids.length === 0) return state
+      const expanded = new Set(state.expandedFolders)
+      let changed = false
+      for (const id of ids) {
+        if (!expanded.has(id)) {
+          expanded.add(id)
+          changed = true
+        }
+      }
+      return changed ? { expandedFolders: expanded } : state
     }),
 
   clearError: () => set({ error: null }),

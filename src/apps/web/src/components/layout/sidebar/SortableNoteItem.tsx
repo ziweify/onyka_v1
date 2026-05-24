@@ -181,6 +181,7 @@ export function SortableNoteItem({
       ref={setNodeRef}
       style={{ ...style, paddingLeft: `${paddingLeft}px` }}
       data-drag-id={dragId}
+      data-note-id={note.id}
       {...(isMobile ? {} : { ...attributes, ...listeners })}
       onClick={isRemoving ? undefined : onSelect}
       onContextMenu={(e) => {

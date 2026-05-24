@@ -23,6 +23,7 @@ type Theme = 'light' | 'dark'
 
 export type ThemeBase =
   | 'default'
+  | 'cursor'
   | 'dracula'
   | 'nord'
   | 'tokyo-night'
@@ -39,6 +40,7 @@ export const THEME_BASES: {
   preview: { bg: string; text: string; accent: string }
 }[] = [
   { id: 'default', name: 'Default', mode: 'dark', preview: { bg: '#0A0A0F', text: '#F5F5F5', accent: '#D97706' } },
+  { id: 'cursor', name: 'Cursor', mode: 'dark', preview: { bg: '#181818', text: '#cccccc', accent: '#3794ff' } },
   { id: 'dracula', name: 'Dracula', mode: 'dark', preview: { bg: '#282a36', text: '#f8f8f2', accent: '#bd93f9' } },
   { id: 'nord', name: 'Nord', mode: 'dark', preview: { bg: '#2e3440', text: '#eceff4', accent: '#88c0d0' } },
   { id: 'tokyo-night', name: 'Tokyo Night', mode: 'dark', preview: { bg: '#1a1b26', text: '#c0caf5', accent: '#7aa2f7' } },
@@ -52,6 +54,7 @@ export const THEME_BASES: {
 
 export type EditorFontSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 export type EditorFontFamily =
+  | 'geist-sans'
   | 'inter'
   | 'georgia'
   | 'montserrat'
@@ -75,6 +78,7 @@ export const EDITOR_FONT_SIZES: { id: EditorFontSize; size: number }[] = [
 ]
 
 export const EDITOR_FONT_FAMILIES: { id: EditorFontFamily; name: string; family: string }[] = [
+  { id: 'geist-sans', name: 'Geist Sans (Cursor)', family: '"Geist Sans", system-ui, sans-serif' },
   { id: 'courier-prime', name: 'Courier Prime', family: '"Courier Prime", monospace' },
   { id: 'crimson-pro', name: 'Crimson Pro', family: '"Crimson Pro", serif' },
   { id: 'eb-garamond', name: 'EB Garamond', family: '"EB Garamond", serif' },
@@ -161,7 +165,7 @@ function persistTheme(data: PersistedTheme): void {
 // Restore persisted values (or use defaults)
 const _persisted = loadPersistedTheme()
 const _initTheme: Theme = _persisted.theme ?? 'dark'
-const _initDarkBase: ThemeBase = _persisted.darkThemeBase ?? 'default'
+const _initDarkBase: ThemeBase = _persisted.darkThemeBase ?? 'cursor'
 const _initLightBase: ThemeBase = _persisted.lightThemeBase ?? 'default'
 const _initAccent: AccentColor = _persisted.accentColor ?? 'amber'
 
@@ -211,7 +215,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   lightThemeBase: _initLightBase,
   accentColor: _initAccent,
   editorFontSize: 'S',
-  editorFontFamily: 'plus-jakarta-sans',
+  editorFontFamily: 'geist-sans',
   focusMode: false,
   focusEditorWidth: 70,
   sidebarCollapsed: false,
@@ -233,7 +237,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const lightThemeBase = (user.lightThemeBase || 'default') as ThemeBase
     const accentColor = (user.accentColor || 'amber') as AccentColor
     const editorFontSize = (user.editorFontSize || 'S') as EditorFontSize
-    const editorFontFamily = (user.editorFontFamily || 'plus-jakarta-sans') as EditorFontFamily
+    const editorFontFamily = (user.editorFontFamily || 'geist-sans') as EditorFontFamily
     const sidebarCollapsed = user.sidebarCollapsed ?? false
     const sidebarWidth = user.sidebarWidth ?? 288
     const tagsCollapsed = user.tagsCollapsed ?? false
@@ -422,7 +426,7 @@ function updateDocumentTheme(
   themeBase: ThemeBase,
   accentColor: AccentColor,
   editorFontSize: EditorFontSize = 'S',
-  editorFontFamily: EditorFontFamily = 'plus-jakarta-sans'
+  editorFontFamily: EditorFontFamily = 'geist-sans'
 ) {
   const root = document.documentElement
 
@@ -451,7 +455,7 @@ function updateDocumentTheme(
   const fontSize = EDITOR_FONT_SIZES.find(s => s.id === editorFontSize)?.size ?? 16
   root.style.setProperty('--editor-font-size', `${fontSize}px`)
 
-  const fontFamily = EDITOR_FONT_FAMILIES.find(f => f.id === editorFontFamily)?.family ?? '"Plus Jakarta Sans", sans-serif'
+  const fontFamily = EDITOR_FONT_FAMILIES.find(f => f.id === editorFontFamily)?.family ?? '"Geist Sans", system-ui, sans-serif'
   root.style.setProperty('--editor-font-family', fontFamily)
 
   // Dynamically load the selected font (noop if already loaded)

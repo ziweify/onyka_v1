@@ -23,6 +23,28 @@ export function getFolderPathSegments(
   return segments
 }
 
+/** Folder ids from root to the given folder (inclusive). */
+export function getFolderAncestorIds(
+  folderTree: FolderTreeItem[],
+  folderId: string | null
+): string[] {
+  if (!folderId) return []
+
+  const ids: string[] = []
+  let currentId: string | null = folderId
+  const visited = new Set<string>()
+
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId)
+    ids.unshift(currentId)
+    const folder = findFolderById(folderTree, currentId)
+    if (!folder) break
+    currentId = folder.parentId
+  }
+
+  return ids
+}
+
 /** Structural path in the notes tree (folders only; title shown separately in the header). */
 export function buildNoteStructurePath(options: {
   folderTree: FolderTreeItem[]

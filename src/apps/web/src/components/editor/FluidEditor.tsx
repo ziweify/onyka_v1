@@ -19,16 +19,20 @@ import { marked } from 'marked'
 import { CustomImage } from './extensions/CustomImage'
 import { Columns, Column, type ColumnsLayout } from './extensions/Columns'
 import { MarkdownTableInput } from './extensions/MarkdownTableInput'
-import { CodeBlockCopy } from './extensions/CodeBlockCopy'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
 import { HeadingWithAnchor } from './extensions/HeadingWithAnchor'
 import { EditorLink } from './extensions/EditorLink'
 import { OutlineMarker } from './extensions/OutlineMarker'
+import { CodeBlockCopy } from './extensions/CodeBlockCopy'
 import { cleanMarkdownHtml, markdownToHtml } from '@/utils/htmlMarkdown'
 import { isAllowedLinkHref, isInPageAnchor, parseNoteLink } from '@/utils/noteLinks'
 import type { Editor } from '@tiptap/react'
 import type { EditorView } from '@tiptap/pm/view'
 import { uploadsApi } from '@/services/api'
 import { SLASH_MENU_ITEMS, type SlashMenuItem } from './editorConstants'
+
+const lowlight = createLowlight(common)
 
 /** Scope heading/paragraph commands to the block at the cursor. */
 function getCursorTextblockRange(editor: Editor): { from: number; to: number } {
@@ -475,6 +479,11 @@ export const FluidEditor = memo(function FluidEditor({
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
         link: false,
+        codeBlock: false,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        HTMLAttributes: { class: 'hljs' },
       }),
       HeadingWithAnchor,
       EditorLink,

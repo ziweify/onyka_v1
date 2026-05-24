@@ -100,8 +100,8 @@ const FONT_IMPORTS: Record<string, () => Promise<void>> = {
  * Noop if the font is already loaded or doesn't need loading (e.g. 'georgia' is a system font).
  */
 export async function loadFont(fontId: string): Promise<void> {
-  // Georgia is a system font, no loading needed
-  if (fontId === 'georgia') return
+  // Geist Sans/Mono are bundled locally in /fonts
+  if (fontId === 'georgia' || fontId === 'geist-sans') return
 
   // Already loaded
   if (loadedFonts.has(fontId)) return

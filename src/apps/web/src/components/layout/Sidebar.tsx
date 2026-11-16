@@ -46,9 +46,10 @@ import {
   makeDragId,
   ROOT_DROP_ID,
   findNoteById,
+  findFolderById,
 } from './sidebar/index'
 import { getAvatarRingClass } from '@/utils/avatar'
-import { getFolderAncestorIds } from '@/utils/notePath'
+import { getFolderAncestorIds, getFolderPathSegments } from '@/utils/notePath'
 import { useIsMobile } from '@/hooks'
 
 function filterNotesByTags(
@@ -199,6 +200,8 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     deleteMultipleFolders,
     moveNoteToFolder,
     selectedFolderIds,
+    selectedFolderId,
+    selectFolder,
     toggleFolderSelection,
     clearFolderSelection,
   } = useFoldersStore()
@@ -267,12 +270,17 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     const found = findNoteById(folderTree, rootNotes, selectedNoteId)
     if (!found) return
 
+    // Keep active folder aligned with the open note's parent (import target)
+    if (useFoldersStore.getState().selectedFolderId !== found.folderId) {
+      selectFolder(found.folderId)
+    }
     expandFolders(getFolderAncestorIds(folderTree, found.folderId))
     return scrollSidebarToNote(selectedNoteId)
   }, [
     selectedNoteId,
     folderTree,
     rootNotes,
+    selectFolder,
     isSearchActive,
     sidebarCollapsed,
     isMobile,
@@ -338,6 +346,24 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   }, [showNewNoteInput])
 
   const isSelectionMode = selectedNoteIds.length > 0 || selectedFolderIds.length > 0
+
+  /** Import / upload destination: note's parent folder, else active folder. */
+  const importTargetFolderId = useMemo(() => {
+    if (selectedNoteId) {
+      const found = findNoteById(folderTree, rootNotes, selectedNoteId)
+      if (found) return found.folderId
+    }
+    if (selectedFolderId) return selectedFolderId
+    if (selectedFolderIds.length === 1) return selectedFolderIds[0]
+    return null
+  }, [selectedNoteId, selectedFolderId, selectedFolderIds, folderTree, rootNotes])
+
+  const importTargetFolderLabel = useMemo(() => {
+    if (!importTargetFolderId) return t('editor.path_root')
+    const path = getFolderPathSegments(folderTree, importTargetFolderId)
+    if (path.length > 0) return path.join(' / ')
+    return findFolderById(folderTree, importTargetFolderId)?.name ?? importTargetFolderId
+  }, [importTargetFolderId, folderTree, t])
 
   const clearAllSelection = () => {
     clearNoteSelection()
@@ -1018,6 +1044,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                     selectedNoteId={selectedNoteId}
                     selectedNoteIds={selectedNoteIds}
                     selectedFolderIds={selectedFolderIds}
+                    activeFolderId={selectedFolderId}
                     isSelectionMode={isSelectionMode}
                     activeItem={dragState.activeItem}
                     onToggleExpand={toggleFolderExpanded}
@@ -1654,6 +1681,8 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
       <ImportDialog
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}
+        folderId={importTargetFolderId}
+        folderLabel={importTargetFolderLabel}
         onImported={(noteId, title) => {
           handleSelectNote(noteId, undefined, title)
           fetchFolderTree()

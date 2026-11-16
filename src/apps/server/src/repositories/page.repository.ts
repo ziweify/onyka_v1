@@ -2,7 +2,11 @@ import { eq, and, asc, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { db, schema } from '../db/index.js'
 import { encrypt, decrypt } from '../utils/crypto.js'
-import type { NotePage, NotePageCreateInput, NotePageUpdateInput } from '@onyka/shared'
+import type { NotePage, NotePageCreateInput, NotePageMode, NotePageUpdateInput } from '@onyka/shared'
+
+function normalizePageMode(mode: unknown): NotePageMode {
+  return mode === 'markdown' ? 'markdown' : 'text'
+}
 
 const { notePages } = schema
 
@@ -44,7 +48,7 @@ export class PageRepository {
       noteId,
       title: encrypt(plainTitle),
       content: encrypt(plainContent),
-      mode: 'text',
+      mode: normalizePageMode(input.mode),
       position,
       isLocked: false,
       isDeleted: false,
@@ -57,6 +61,7 @@ export class PageRepository {
       noteId,
       title: plainTitle,
       content: plainContent,
+      mode: normalizePageMode(input.mode),
       position,
       isLocked: false,
       isDeleted: false,
@@ -72,6 +77,7 @@ export class PageRepository {
 
     if (input.title !== undefined) updateData.title = encrypt(input.title)
     if (input.content !== undefined) updateData.content = encrypt(input.content)
+    if (input.mode !== undefined) updateData.mode = normalizePageMode(input.mode)
     if (input.isLocked !== undefined) updateData.isLocked = input.isLocked
 
     await db.update(notePages).set(updateData).where(eq(notePages.id, id))
@@ -158,6 +164,7 @@ export class PageRepository {
       noteId: row.noteId,
       title: decrypt(row.title),
       content: decrypt(row.content),
+      mode: normalizePageMode(row.mode),
       position: row.position,
       isLocked: row.isLocked,
       isDeleted: row.isDeleted,

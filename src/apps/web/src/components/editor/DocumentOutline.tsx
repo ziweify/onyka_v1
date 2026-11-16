@@ -12,14 +12,19 @@ import {
 } from 'react-icons/io5'
 import {
   collectOutlineItems,
+  collectOutlineFromMarkdown,
   scrollToOutlineItem,
+  scrollMarkdownToOutlinePos,
   OUTLINE_RULE_HINTS,
   type OutlineItem,
   type OutlineItemKind,
 } from '@/utils/documentOutline'
 
 interface DocumentOutlineProps {
-  editor: Editor | null
+  editor?: Editor | null
+  /** Markdown 源码模式：按 # / ## / ### 识别大纲 */
+  markdownSource?: string | null
+  markdownScroller?: { scrollToPos: (pos: number) => void } | null
   open: boolean
   onToggle?: () => void
   variant?: 'sidebar' | 'drawer'
@@ -56,52 +61,80 @@ function findActiveItem(items: OutlineItem[], scrollRoot: HTMLElement | null): s
   return active
 }
 
-export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentOutlineProps) {
+export function DocumentOutline({
+  editor = null,
+  markdownSource = null,
+  markdownScroller = null,
+  open,
+  variant = 'sidebar',
+}: DocumentOutlineProps) {
   const { t } = useTranslation()
   const [items, setItems] = useState<OutlineItem[]>([])
   const [collapsed, setCollapsed] = useState(false)
   const [showRules, setShowRules] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const scrollRootRef = useRef<HTMLElement | null>(null)
+  const mdMode = markdownSource != null
+  const liveEditor = editor && !editor.isDestroyed ? editor : null
 
   useEffect(() => {
-    if (!editor) {
+    if (mdMode) {
+      setItems(collectOutlineFromMarkdown(markdownSource || ''))
+      return
+    }
+
+    if (!liveEditor) {
       setItems([])
       return
     }
 
-    const update = () => setItems(collectOutlineItems(editor))
-    update()
-    editor.on('update', update)
-    editor.on('selectionUpdate', update)
-    return () => {
-      editor.off('update', update)
-      editor.off('selectionUpdate', update)
+    const update = () => {
+      if (liveEditor.isDestroyed) return
+      setItems(collectOutlineItems(liveEditor))
     }
-  }, [editor])
+    update()
+    liveEditor.on('update', update)
+    liveEditor.on('selectionUpdate', update)
+    return () => {
+      liveEditor.off('update', update)
+      liveEditor.off('selectionUpdate', update)
+    }
+  }, [liveEditor, mdMode, markdownSource])
 
   useEffect(() => {
-    if (!editor || !open) return
-    scrollRootRef.current =
-      (editor.view.dom.closest('.editor-scroll-container') as HTMLElement | null) ?? editor.view.dom
+    if (!open || mdMode || !liveEditor) return
+    try {
+      scrollRootRef.current =
+        (liveEditor.view.dom.closest('.editor-scroll-container') as HTMLElement | null) ??
+        liveEditor.view.dom
+    } catch {
+      return
+    }
 
     const root = scrollRootRef.current
+    if (!root) return
     const onScroll = () => setActiveId(findActiveItem(items, root))
     onScroll()
     root.addEventListener('scroll', onScroll, { passive: true })
     return () => root.removeEventListener('scroll', onScroll)
-  }, [editor, open, items])
+  }, [liveEditor, open, items, mdMode])
 
   const scrollTo = useCallback(
     (item: OutlineItem) => {
-      if (!editor) return
-      scrollToOutlineItem(editor, item)
+      if (mdMode && markdownScroller) {
+        scrollMarkdownToOutlinePos(markdownScroller, item.pos)
+        setActiveId(item.id)
+        return
+      }
+      if (!liveEditor) return
+      scrollToOutlineItem(liveEditor, item)
       setActiveId(item.id)
     },
-    [editor]
+    [liveEditor, mdMode, markdownScroller]
   )
 
-  if (!open || !editor) return null
+  if (!open) return null
+  if (!mdMode && !liveEditor) return null
 
   const panel = (
     <div
@@ -128,7 +161,7 @@ export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentO
         <>
           {items.length === 0 ? (
             <div className="document-outline-empty px-3 pb-3 text-[11px] leading-relaxed">
-              {t('editor.outline_empty')}
+              {t(mdMode ? 'editor.outline_empty_md' : 'editor.outline_empty')}
             </div>
           ) : (
             <ul className="px-2 py-1 overflow-y-auto flex-1 text-[11px] leading-snug min-h-0">
@@ -170,7 +203,10 @@ export function DocumentOutline({ editor, open, variant = 'sidebar' }: DocumentO
             </button>
             {showRules && (
               <ul className="document-outline-empty px-3 pb-2.5 space-y-1 text-[10px] leading-relaxed list-disc list-inside">
-                {OUTLINE_RULE_HINTS.map((key) => (
+                {(mdMode
+                  ? OUTLINE_RULE_HINTS.filter((k) => k !== 'editor.outline_rule_heading' && k !== 'editor.outline_rule_marker')
+                  : OUTLINE_RULE_HINTS
+                ).map((key) => (
                   <li key={key}>{t(key)}</li>
                 ))}
               </ul>

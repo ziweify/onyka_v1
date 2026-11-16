@@ -4,7 +4,7 @@ import { authApi, ApiException, type RateLimitInfo, type Auth2FARequiredResponse
 import { setLanguage, setLanguageWithServer, resolveUserLanguage } from '@/i18n'
 import { useThemeStore, setAuthenticatedState } from './theme'
 import { useNotesStore } from './notes'
-import { useFoldersStore } from './folders'
+import { resetFolderNav, setFolderNavUser } from './folders'
 import { useTagsStore } from './tags'
 import { useSparksStore } from './sparks'
 import { useSharesStore } from './shares'
@@ -19,7 +19,7 @@ import { resetWorkspaceTabs } from './workspaceTabs'
 /** Resets all user-scoped stores on logout to prevent data leaking between sessions. */
 function clearAllUserStores() {
   useNotesStore.setState({ notes: [], currentNote: null, searchResults: [], selectedNoteIds: [], isLoading: false, error: null })
-  useFoldersStore.setState({ folders: [], isLoading: false, error: null })
+  resetFolderNav()
   useTagsStore.setState({ tags: [], isLoading: false, error: null })
   useSparksStore.setState({ pinned: [], temporary: [], permanent: [], stats: null, isLoading: false, error: null, isDrawerOpen: false })
   useSharesStore.setState({ sharedWithMe: [], myShares: [], sharedFolderIds: new Set(), isLoadingSharedWithMe: false, isLoadingMyShares: false })
@@ -95,6 +95,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)
+      setFolderNavUser(user.id)
       set({ user, isAuthenticated: true })
     } catch (err) {
       if (err && typeof err === 'object' && 'requires2FA' in err) {
@@ -118,6 +119,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       void setLanguageWithServer(lang)
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)
+      setFolderNavUser(user.id)
       set({ user, isAuthenticated: true })
     } catch (err) {
       const rateLimitInfo = err instanceof ApiException ? err.rateLimitInfo : null
@@ -166,9 +168,11 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
       await useThemeStore.getState().loadFromUser(user)
       setAuthenticatedState(true)
+      setFolderNavUser(user.id)
       set({ user, isAuthenticated: true, isLoading: false })
     } catch {
       setAuthenticatedState(false)
+      setFolderNavUser(null)
       set({ user: null, isAuthenticated: false, isLoading: false })
     }
   },
@@ -177,6 +181,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setUser: (user) => {
     setAuthenticatedState(true)
+    setFolderNavUser(user.id)
     set({ user, isAuthenticated: true })
   },
 

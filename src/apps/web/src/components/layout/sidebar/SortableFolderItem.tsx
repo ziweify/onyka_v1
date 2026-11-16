@@ -39,6 +39,8 @@ interface SortableFolderItemProps {
   selectedNoteId: string | null
   selectedNoteIds: string[]
   selectedFolderIds: string[]
+  /** Last focused/activated folder (persisted across refresh) */
+  activeFolderId?: string | null
   isSelectionMode: boolean
   activeItem: DragItemId | null
   onToggleExpand: (id: string) => void
@@ -67,6 +69,7 @@ export function SortableFolderItem({
   selectedNoteId,
   selectedNoteIds,
   selectedFolderIds,
+  activeFolderId = null,
   isSelectionMode,
   activeItem,
   onToggleExpand,
@@ -244,6 +247,8 @@ export function SortableFolderItem({
     return f.children.some((child) => checkHasSelectedNote(child))
   }
   const hasSelectedNote = checkHasSelectedNote(folder)
+  const isActiveFolder = activeFolderId === folder.id
+  const showActiveTint = hasSelectedNote || isActiveFolder
 
   const handleClick = (e: React.MouseEvent) => {
     if (isRemoving) return
@@ -336,7 +341,7 @@ export function SortableFolderItem({
               ? 'bg-[var(--color-accent)]/15'
               : isMultiSelected
                 ? 'bg-[var(--color-accent)]/15 ring-1 ring-[var(--color-accent)]/30'
-                : hasSelectedNote && !folderColorHex
+                : showActiveTint && !folderColorHex
                   ? 'bg-[var(--color-accent)]/6'
                   : !folderColorHex
                     ? 'hover:bg-[var(--color-bg-tertiary)]/80 hover:text-[var(--color-text-primary)]'
@@ -347,7 +352,7 @@ export function SortableFolderItem({
         style={{
           paddingLeft: `${paddingLeft}px`,
           ...(folderColorHex && !showDropInto && !isMultiSelected
-            ? { backgroundColor: folderRowBackground(folderColorHex, hasSelectedNote ? 0.22 : 0.14) }
+            ? { backgroundColor: folderRowBackground(folderColorHex, showActiveTint ? 0.22 : 0.14) }
             : {}),
         }}
       >
@@ -377,14 +382,14 @@ export function SortableFolderItem({
             w-4 h-4 transition-transform duration-200 flex-shrink-0
             ${isExpanded ? 'rotate-90' : ''}
             ${!hasContent ? 'invisible' : ''}
-            ${hasSelectedNote && !folderColorHex ? 'text-[var(--color-accent)]/60' : 'text-[var(--color-text-tertiary)]'}
+            ${showActiveTint && !folderColorHex ? 'text-[var(--color-accent)]/60' : 'text-[var(--color-text-tertiary)]'}
           `}
           style={folderColorHex ? { color: folderColorHex } : undefined}
         />
 
         {renderFolderIcon(
           `w-4 h-4 flex-shrink-0 transition-colors ${
-            hasSelectedNote && !folderColorHex
+            showActiveTint && !folderColorHex
               ? 'text-[var(--color-accent)]'
               : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'
           }`
@@ -392,7 +397,7 @@ export function SortableFolderItem({
 
         <span
           className={`flex-1 truncate text-sm transition-colors ${
-            hasSelectedNote ? 'text-[var(--color-text-primary)] font-medium' : 'text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]'
+            showActiveTint ? 'text-[var(--color-text-primary)] font-medium' : 'text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]'
           }`}
         >
           {folder.name}
@@ -567,7 +572,7 @@ export function SortableFolderItem({
       {isExpanded && (hasContent || showNewNoteInput || showNewFolderInput) && (
         <div
           className={`relative ml-2 animate-folder-expand rounded-lg ${
-            !folderColorHex && hasSelectedNote ? 'bg-[var(--color-accent)]/[0.03]' : ''
+            !folderColorHex && showActiveTint ? 'bg-[var(--color-accent)]/[0.03]' : ''
           }`}
           style={folderColorHex ? { backgroundColor: folderSectionBackground(folderColorHex) } : undefined}
         >
@@ -625,6 +630,7 @@ export function SortableFolderItem({
                     selectedNoteId={selectedNoteId}
                     selectedNoteIds={selectedNoteIds}
                     selectedFolderIds={selectedFolderIds}
+                    activeFolderId={activeFolderId}
                     isSelectionMode={isSelectionMode}
                     activeItem={activeItem}
                     onToggleExpand={onToggleExpand}

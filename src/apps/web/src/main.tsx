@@ -17,8 +17,14 @@ createRoot(document.getElementById('root')!).render(
 // Register service worker in production (enables PWA install)
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Silent fail — SW is optional, app works without it
-    })
+    // Bust stale caches from older SW strategies, then re-register
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((regs) => Promise.all(regs.map((r) => r.update())))
+      .finally(() => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+          // Silent fail — SW is optional, app works without it
+        })
+      })
   })
 }

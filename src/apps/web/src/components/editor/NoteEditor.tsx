@@ -29,7 +29,8 @@ import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
 import { WebSnapshotViewer } from './WebSnapshotViewer'
 import { extractWebSnapshotId } from '@/utils/webSnapshot'
-import { MarkdownSourceEditor } from './MarkdownSourceEditor'
+import { markdownToHtml } from '@/utils/htmlMarkdown'
+import { MarkdownSourceEditor, type MarkdownSourceHandle } from './MarkdownSourceEditor'
 import { DocumentOutline } from './DocumentOutline'
 import { NoteAttachmentsPanel } from './NoteAttachmentsPanel'
 import { PageTabs } from './PageTabs'
@@ -50,6 +51,7 @@ import { FocusTimer } from './FocusTimer'
 import { formatNoteDate, formatTimeAgo } from '@/utils/format'
 import { buildNoteStructurePath } from '@/utils/notePath'
 import { NotePathBreadcrumb } from './NotePathBreadcrumb'
+import { DocumentTypeBadge } from './DocumentTypeBadge'
 
 // Module-level cache for collaborator counts — avoids API call on every note switch
 const _collabCountCache = new Map<string, number>()
@@ -109,6 +111,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [markdownMode, setMarkdownMode] = useState(false)
+  const [markdownSource, setMarkdownSource] = useState('')
+  const [markdownHandle, setMarkdownHandle] = useState<MarkdownSourceHandle | null>(null)
   const [rightPanelTab, setRightPanelTab] = useState<'outline' | 'attachments' | null>('outline')
   const [attachmentCount, setAttachmentCount] = useState(0)
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null)
@@ -371,7 +375,52 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     setIsEditMode(true)
   }
 
+  const persistPageMode = useCallback(
+    (mode: 'text' | 'markdown') => {
+      if (!activePage || activePage.mode === mode) return
+      void updatePage(activePage.id, { mode })
+    },
+    [activePage, updatePage]
+  )
+
+  /** Save MD buffer into HTML content without changing document type. */
+  const saveMarkdownBuffer = useCallback(() => {
+    if (!markdownMode || !markdownHandle) return
+    try {
+      const html = markdownToHtml(markdownHandle.getValue())
+      localContentRef.current = html
+      setLocalContent(html)
+      isEditingRef.current = true
+      pendingUpdatesRef.current = { ...pendingUpdatesRef.current, content: html }
+    } catch {
+      /* keep buffer; user can fix invalid MD */
+    }
+  }, [markdownMode, markdownHandle])
+
+  /** Switch document type to rich text (and leave MD editor). */
+  const switchToRichDocument = useCallback(() => {
+    saveMarkdownBuffer()
+    setMarkdownMode(false)
+    setEditorInstance(null)
+    persistPageMode('text')
+  }, [saveMarkdownBuffer, persistPageMode])
+
+  const enterMarkdownMode = useCallback(() => {
+    setEditorInstance(null)
+    setMarkdownMode(true)
+    persistPageMode('markdown')
+  }, [persistPageMode])
+
   const handleExitEditMode = async () => {
+    if (markdownMode) {
+      saveMarkdownBuffer()
+      // Keep MD editor if this page's document type is markdown
+      if (activePage?.mode !== 'markdown') {
+        setMarkdownMode(false)
+        setEditorInstance(null)
+      }
+    }
+
     if (pendingUpdatesRef.current && Object.keys(pendingUpdatesRef.current).length > 0) {
       await saveNow()
     }
@@ -587,6 +636,12 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const displayWordCount = useMemo(() => countWords(localContent), [localContent])
   const webSnapshotId = useMemo(() => extractWebSnapshotId(localContent), [localContent])
 
+  // Keep editor UI in sync with persisted page document type
+  useEffect(() => {
+    if (!activePage || webSnapshotId) return
+    setMarkdownMode(activePage.mode === 'markdown')
+  }, [activePage?.id, activePage?.mode, webSnapshotId])
+
   const currentFontFamily = EDITOR_FONT_FAMILIES.find(f => f.id === editorFontFamily)
 
   useEffect(() => {
@@ -659,9 +714,42 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             />
             {!focusMode && (
               <div className="mt-1.5 pl-8 md:pl-0 space-y-1 min-w-0">
-                {structurePath.length > 0 && (
-                  <NotePathBreadcrumb segments={structurePath} />
-                )}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {webSnapshotId ? (
+                    <DocumentTypeBadge kind="web" label={t('editor.doc_type_web')} />
+                  ) : (
+                    <DocumentTypeBadge
+                      kind={markdownMode || activePage?.mode === 'markdown' ? 'markdown' : 'text'}
+                      label={
+                        markdownMode || activePage?.mode === 'markdown'
+                          ? t('editor.doc_type_md')
+                          : t('editor.doc_type_rich')
+                      }
+                      title={
+                        canEdit && !isPageLocked
+                          ? markdownMode || activePage?.mode === 'markdown'
+                            ? t('editor.doc_type_switch_rich')
+                            : t('editor.doc_type_switch_md')
+                          : undefined
+                      }
+                      onClick={
+                        canEdit && !isPageLocked
+                          ? () => {
+                              if (markdownMode || activePage?.mode === 'markdown') {
+                                switchToRichDocument()
+                              } else {
+                                if (!isEditMode) setIsEditMode(true)
+                                enterMarkdownMode()
+                              }
+                            }
+                          : undefined
+                      }
+                    />
+                  )}
+                  {structurePath.length > 0 && (
+                    <NotePathBreadcrumb segments={structurePath} className="flex-1" />
+                  )}
+                </div>
                 <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] font-medium whitespace-nowrap overflow-hidden">
                 <span>{formatNoteDate(note.createdAt, i18n.language)}</span>
                 <span className="opacity-30">·</span>
@@ -706,43 +794,47 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                   {!isPageLocked && (
                     <button
                       type="button"
-                      onClick={() => setMarkdownMode((m) => !m)}
+                      onClick={() => {
+                        if (markdownMode) {
+                          switchToRichDocument()
+                        } else {
+                          enterMarkdownMode()
+                        }
+                      }}
                       className="h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)] border border-[var(--color-border-subtle)] transition-colors"
-                      title={markdownMode ? t('editor.rich_mode') : t('editor.markdown_mode')}
+                      title={markdownMode ? t('editor.doc_type_switch_rich') : t('editor.doc_type_switch_md')}
                     >
                       <IoLogoMarkdown className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">MD</span>
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setRightPanelTab((tab) => (tab === 'outline' ? null : 'outline'))
+                    }
+                    className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
+                      rightPanelTab === 'outline' ? 'is-on' : ''
+                    }`}
+                    title={t('editor.outline_title')}
+                  >
+                    <IoListOutline className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{t('editor.outline_title')}</span>
+                  </button>
                   {!markdownMode && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRightPanelTab((tab) => (tab === 'outline' ? null : 'outline'))
-                        }
-                        className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
-                          rightPanelTab === 'outline' ? 'is-on' : ''
-                        }`}
-                        title={t('editor.outline_title')}
-                      >
-                        <IoListOutline className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{t('editor.outline_title')}</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
-                        }
-                        className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
-                          rightPanelTab === 'attachments' ? 'is-on' : ''
-                        }`}
-                        title={t('attachments.title')}
-                      >
-                        <IoAttachOutline className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{t('attachments.title')}</span>
-                      </button>
-                    </>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
+                      }
+                      className={`document-outline-toggle h-8 px-2.5 rounded-lg text-[12px] font-medium flex items-center gap-1 border border-[var(--color-border-subtle)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors ${
+                        rightPanelTab === 'attachments' ? 'is-on' : ''
+                      }`}
+                      title={t('attachments.title')}
+                    >
+                      <IoAttachOutline className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{t('attachments.title')}</span>
+                    </button>
                   )}
                   <button
                     type="button"
@@ -1072,12 +1164,18 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                       <button
                         onClick={() => {
                           setShowOptionsMenu(false)
-                          setMarkdownMode((m) => !m)
+                          if (markdownMode) {
+                            switchToRichDocument()
+                          } else {
+                            enterMarkdownMode()
+                          }
                         }}
                         className="w-full flex items-center gap-2 px-3 h-8 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
                       >
                         <IoLogoMarkdown className="w-4 h-4" />
-                        <span>{markdownMode ? t('editor.rich_mode') : t('editor.markdown_mode')}</span>
+                        <span>
+                          {markdownMode ? t('editor.doc_type_switch_rich') : t('editor.doc_type_switch_md')}
+                        </span>
                       </button>
                     )}
                     <button
@@ -1149,8 +1247,14 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         </div>
       )}
       <div className="relative flex-1 min-h-0 flex flex-col">
-        {!markdownMode && rightPanelTab === 'outline' && (
-          <DocumentOutline editor={editorInstance} open variant="sidebar" />
+        {rightPanelTab === 'outline' && (
+          <DocumentOutline
+            editor={markdownMode ? null : editorInstance}
+            markdownSource={markdownMode ? markdownSource : null}
+            markdownScroller={markdownMode ? markdownHandle : null}
+            open
+            variant="sidebar"
+          />
         )}
         {!markdownMode && rightPanelTab === 'attachments' && (
           <NoteAttachmentsPanel
@@ -1161,10 +1265,16 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             onCountChange={setAttachmentCount}
           />
         )}
-        {!markdownMode && rightPanelTab && (
+        {rightPanelTab && (markdownMode ? rightPanelTab === 'outline' : true) && (
           <div className="document-outline-drawer-wrap lg:hidden px-3 py-2 shrink-0">
             {rightPanelTab === 'outline' ? (
-              <DocumentOutline editor={editorInstance} open variant="drawer" />
+              <DocumentOutline
+                editor={markdownMode ? null : editorInstance}
+                markdownSource={markdownMode ? markdownSource : null}
+                markdownScroller={markdownMode ? markdownHandle : null}
+                open
+                variant="drawer"
+              />
             ) : (
               <NoteAttachmentsPanel
                 noteId={note.id}
@@ -1177,8 +1287,12 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           </div>
         )}
         <div
-          className={`editor-scroll-container editor-writing-surface flex-1 overflow-auto px-4 md:px-8 pb-4 ${
-            isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
+          className={`editor-scroll-container flex-1 min-h-0 ${
+            markdownMode
+              ? 'overflow-hidden p-0'
+              : `editor-writing-surface overflow-auto px-4 md:px-8 pb-4 ${
+                  isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
+                }`
           }`}
         >
           {webSnapshotId ? (
@@ -1191,11 +1305,24 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             <MarkdownSourceEditor
               htmlContent={localContent}
               readOnly={isReadOnly}
+              onMarkdownChange={setMarkdownSource}
+              onEditorReady={setMarkdownHandle}
               onApply={(html) => {
+                localContentRef.current = html
+                setLocalContent(html)
                 handleContentChange(html)
-                setMarkdownMode(false)
+                // Stay in MD editor — document type remains markdown
+                persistPageMode('markdown')
               }}
-              onCancel={() => setMarkdownMode(false)}
+              onCancel={() => {
+                // Discard buffer edits: reload from last saved HTML via remount sync
+                if (activePage?.mode === 'markdown') {
+                  setMarkdownSource('') // force remount content from htmlContent effect
+                } else {
+                  setEditorInstance(null)
+                  setMarkdownMode(false)
+                }
+              }}
             />
           ) : (
             <FluidEditor

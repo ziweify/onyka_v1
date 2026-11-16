@@ -98,7 +98,7 @@ export const notePages = sqliteTable(
       .references(() => notes.id, { onDelete: 'cascade' }),
     title: text('title').notNull().default('Page 1'),
     content: text('content').notNull().default(''),
-    mode: text('mode', { enum: ['text'] })
+    mode: text('mode', { enum: ['text', 'markdown'] })
       .notNull()
       .default('text'),
     position: integer('position').notNull().default(0),

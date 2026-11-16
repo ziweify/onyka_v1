@@ -50,6 +50,42 @@
   --editor-code-inline-bg: rgba(175, 184, 193, 0.2);
   --editor-code-inline-fg: #cf222e;
 
+  /* Markdown source editor (Cursor / GitHub light) */
+  /* Match Cursor / VS Code default editor.fontFamily */
+  --md-mono: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  --md-editor-bg: #ffffff;
+  --md-editor-fg: #24292f;
+  --md-toolbar-bg: #f6f8fa;
+  --md-gutter-bg: #f6f8fa;
+  --md-gutter-fg: #8c959f;
+  --md-gutter-active: #24292f;
+  --md-gutter-border: rgba(208, 215, 222, 0.7);
+  --md-active-line: rgba(234, 238, 242, 0.7);
+  --md-selection: rgba(9, 105, 218, 0.2);
+  --md-bracket-match: rgba(9, 105, 218, 0.12);
+  --md-bracket-outline: rgba(9, 105, 218, 0.35);
+  --md-heading: #0550ae;
+  --md-strong: #0550ae;
+  --md-emphasis: #8250df;
+  --md-strike: #6e7781;
+  --md-link: #0969da;
+  --md-url: #0a3069;
+  --md-code: #cf222e;
+  --md-string: #0a3069;
+  --md-comment: #6e7781;
+  --md-meta: #656d76;
+  --md-keyword: #cf222e;
+  --md-operator: #0550ae;
+  --md-number: #0550ae;
+  --md-property: #0550ae;
+  --md-variable: #953800;
+  --md-type: #953800;
+  --md-punct: #656d76;
+  --md-tag: #116329;
+  --md-attr: #0550ae;
+  --md-quote: #57606a;
+  --md-list: #0550ae;
+
   /* Timing */
   --transition-fast: 100ms;
   --transition-base: 180ms;
@@ -100,4 +136,38 @@
   --editor-code-fg: #d4d4d4;
   --editor-code-inline-bg: rgba(255, 255, 255, 0.08);
   --editor-code-inline-fg: #e394dc;
+
+  /* Markdown source editor (Cursor / VS Code Dark+) */
+  --md-editor-bg: #1e1e1e;
+  --md-editor-fg: #cccccc;
+  --md-toolbar-bg: #181818;
+  --md-gutter-bg: #1e1e1e;
+  --md-gutter-fg: #6e7681;
+  --md-gutter-active: #cccccc;
+  --md-gutter-border: rgba(255, 255, 255, 0.06);
+  --md-active-line: rgba(255, 255, 255, 0.04);
+  --md-selection: rgba(55, 148, 255, 0.28);
+  --md-bracket-match: rgba(55, 148, 255, 0.18);
+  --md-bracket-outline: rgba(55, 148, 255, 0.45);
+  --md-heading: #569cd6;
+  --md-strong: #569cd6;
+  --md-emphasis: #c586c0;
+  --md-strike: #808080;
+  --md-link: #4fc1ff;
+  --md-url: #3794ff;
+  --md-code: #ce9178;
+  --md-string: #ce9178;
+  --md-comment: #6a9955;
+  --md-meta: #808080;
+  --md-keyword: #569cd6;
+  --md-operator: #d4d4d4;
+  --md-number: #b5cea8;
+  --md-property: #9cdcfe;
+  --md-variable: #9cdcfe;
+  --md-type: #4ec9b0;
+  --md-punct: #d4d4d4;
+  --md-tag: #569cd6;
+  --md-attr: #9cdcfe;
+  --md-quote: #6a9955;
+  --md-list: #6796e6;
 }

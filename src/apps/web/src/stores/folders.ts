@@ -2,6 +2,11 @@ import { create } from 'zustand'
 import type { Folder, FolderNote } from '@onyka/shared'
 import { foldersApi, type FolderTreeItem } from '@/services/api'
 
+interface PersistedFolderNav {
+  expandedFolderIds: string[]
+  selectedFolderId: string | null
+}
+
 interface FoldersState {
   folders: Folder[]
   folderTree: FolderTreeItem[]
@@ -31,6 +36,97 @@ interface FoldersState {
   closeNewNoteInput: () => void
   toggleFolderSelection: (id: string) => void
   clearFolderSelection: () => void
+}
+
+const STORAGE_PREFIX = 'onyka-folder-nav'
+
+let persistUserId: string | null = null
+
+function storageKey(userId: string) {
+  return `${STORAGE_PREFIX}:${userId}`
+}
+
+function loadPersisted(userId: string): PersistedFolderNav | null {
+  try {
+    const raw = localStorage.getItem(storageKey(userId))
+    if (!raw) return null
+    const data = JSON.parse(raw) as PersistedFolderNav
+    if (!Array.isArray(data.expandedFolderIds)) return null
+    return {
+      expandedFolderIds: data.expandedFolderIds.filter((id) => typeof id === 'string'),
+      selectedFolderId:
+        typeof data.selectedFolderId === 'string' || data.selectedFolderId === null
+          ? data.selectedFolderId
+          : null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function savePersisted() {
+  if (!persistUserId) return
+  try {
+    const { expandedFolders, selectedFolderId } = useFoldersStore.getState()
+    const payload: PersistedFolderNav = {
+      expandedFolderIds: [...expandedFolders],
+      selectedFolderId,
+    }
+    localStorage.setItem(storageKey(persistUserId), JSON.stringify(payload))
+  } catch {
+    /* quota or private mode */
+  }
+}
+
+function collectFolderIds(tree: FolderTreeItem[]): Set<string> {
+  const ids = new Set<string>()
+  const walk = (nodes: FolderTreeItem[]) => {
+    for (const node of nodes) {
+      ids.add(node.id)
+      if (node.children?.length) walk(node.children)
+    }
+  }
+  walk(tree)
+  return ids
+}
+
+/** Hydrate expanded/active folder nav for the signed-in user. */
+export function setFolderNavUser(userId: string | null) {
+  persistUserId = userId
+  if (!userId) {
+    useFoldersStore.setState({
+      expandedFolders: new Set(),
+      selectedFolderId: null,
+      selectedFolderIds: [],
+    })
+    return
+  }
+  const saved = loadPersisted(userId)
+  if (saved) {
+    useFoldersStore.setState({
+      expandedFolders: new Set(saved.expandedFolderIds),
+      selectedFolderId: saved.selectedFolderId,
+    })
+  } else {
+    useFoldersStore.setState({
+      expandedFolders: new Set(),
+      selectedFolderId: null,
+    })
+  }
+}
+
+export function resetFolderNav() {
+  persistUserId = null
+  useFoldersStore.setState({
+    folders: [],
+    folderTree: [],
+    rootNotes: [],
+    expandedFolders: new Set(),
+    selectedFolderId: null,
+    selectedFolderIds: [],
+    isLoading: false,
+    error: null,
+  })
 }
 
 export const useFoldersStore = create<FoldersState>((set, get) => ({
@@ -63,7 +159,19 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
     }
     try {
       const { tree, rootNotes } = await foldersApi.tree()
-      set({ folderTree: tree, rootNotes, ...(isInitialLoad ? { isLoading: false } : {}) })
+      const validIds = collectFolderIds(tree)
+      const { expandedFolders, selectedFolderId } = get()
+      const prunedExpanded = new Set([...expandedFolders].filter((id) => validIds.has(id)))
+      const prunedSelected =
+        selectedFolderId && validIds.has(selectedFolderId) ? selectedFolderId : null
+      set({
+        folderTree: tree,
+        rootNotes,
+        expandedFolders: prunedExpanded,
+        selectedFolderId: prunedSelected,
+        ...(isInitialLoad ? { isLoading: false } : {}),
+      })
+      savePersisted()
     } catch {
       set({ error: 'Failed to fetch folder tree', ...(isInitialLoad ? { isLoading: false } : {}) })
     }
@@ -101,11 +209,17 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
   deleteFolder: async (id, cascade = false) => {
     try {
       await foldersApi.delete(id, cascade)
-      set((state) => ({
-        folders: state.folders.filter((f) => f.id !== id),
-        selectedFolderId: state.selectedFolderId === id ? null : state.selectedFolderId,
-        selectedFolderIds: state.selectedFolderIds.filter((fid) => fid !== id),
-      }))
+      set((state) => {
+        const expanded = new Set(state.expandedFolders)
+        expanded.delete(id)
+        return {
+          folders: state.folders.filter((f) => f.id !== id),
+          selectedFolderId: state.selectedFolderId === id ? null : state.selectedFolderId,
+          selectedFolderIds: state.selectedFolderIds.filter((fid) => fid !== id),
+          expandedFolders: expanded,
+        }
+      })
+      savePersisted()
       get().fetchFolderTree()
     } catch (err) {
       set({ error: 'Failed to delete folder' })
@@ -116,11 +230,20 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
   deleteMultipleFolders: async (ids) => {
     try {
       await Promise.all(ids.map((id) => foldersApi.delete(id, true)))
-      set((state) => ({
-        folders: state.folders.filter((f) => !ids.includes(f.id)),
-        selectedFolderId: state.selectedFolderId && ids.includes(state.selectedFolderId) ? null : state.selectedFolderId,
-        selectedFolderIds: [],
-      }))
+      set((state) => {
+        const idSet = new Set(ids)
+        const expanded = new Set([...state.expandedFolders].filter((id) => !idSet.has(id)))
+        return {
+          folders: state.folders.filter((f) => !idSet.has(f.id)),
+          selectedFolderId:
+            state.selectedFolderId && idSet.has(state.selectedFolderId)
+              ? null
+              : state.selectedFolderId,
+          selectedFolderIds: [],
+          expandedFolders: expanded,
+        }
+      })
+      savePersisted()
       get().fetchFolderTree()
     } catch (err) {
       set({ error: 'Failed to delete folders' })
@@ -158,9 +281,12 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
     }
   },
 
-  selectFolder: (id) => set({ selectedFolderId: id }),
+  selectFolder: (id) => {
+    set({ selectedFolderId: id })
+    savePersisted()
+  },
 
-  toggleFolderExpanded: (id) =>
+  toggleFolderExpanded: (id) => {
     set((state) => {
       const expanded = new Set(state.expandedFolders)
       if (expanded.has(id)) {
@@ -168,10 +294,12 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
       } else {
         expanded.add(id)
       }
-      return { expandedFolders: expanded }
-    }),
+      return { expandedFolders: expanded, selectedFolderId: id }
+    })
+    savePersisted()
+  },
 
-  expandFolders: (ids) =>
+  expandFolders: (ids) => {
     set((state) => {
       if (ids.length === 0) return state
       const expanded = new Set(state.expandedFolders)
@@ -183,7 +311,9 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
         }
       }
       return changed ? { expandedFolders: expanded } : state
-    }),
+    })
+    savePersisted()
+  },
 
   clearError: () => set({ error: null }),
 

@@ -369,7 +369,7 @@ interface FluidEditorProps {
   readOnly?: boolean
   noteId?: string
   onOpenNote?: (noteId: string, hash?: string) => void
-  onEditorReady?: (editor: Editor) => void
+  onEditorReady?: (editor: Editor | null) => void
 }
 
 export const FluidEditor = memo(function FluidEditor({
@@ -946,6 +946,7 @@ export const FluidEditor = memo(function FluidEditor({
 
   useEffect(() => {
     if (editor) onEditorReady?.(editor)
+    return () => onEditorReady?.(null)
   }, [editor, onEditorReady])
 
   useEffect(() => {

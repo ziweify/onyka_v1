@@ -1,5 +1,5 @@
-const CACHE_NAME = 'onyka-v2'
-const STATIC_ASSETS = ['/', '/manifest.json']
+const CACHE_NAME = 'onyka-v4'
+const STATIC_ASSETS = ['/manifest.json']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -21,26 +21,40 @@ self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
 
-  // Skip non-GET requests
   if (request.method !== 'GET') return
-
-  // Skip API and WebSocket — let the browser handle them normally
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/')) return
 
-  // Network-first for navigation (HTML), cache-first for static assets
-  if (request.mode === 'navigate') {
+  // Always network for HTML / SW / entry — avoid stale shells
+  if (
+    request.mode === 'navigate' ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    url.pathname === '/sw.js'
+  ) {
+    event.respondWith(fetch(request).catch(() => caches.match('/')))
+    return
+  }
+
+  // Network-first for JS/CSS so new hashes win even if an old entry lingered
+  if (/\.(js|css)$/.test(url.pathname)) {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/'))
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(request))
     )
     return
   }
 
-  // Cache-first for static assets (JS, CSS, fonts, images)
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached
       return fetch(request).then((response) => {
-        // Cache successful responses for static assets with hashed filenames
         if (response.ok && url.pathname.match(/\.[a-f0-9]{8,}\./)) {
           const clone = response.clone()
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))

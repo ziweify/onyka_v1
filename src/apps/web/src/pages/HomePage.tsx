@@ -6,6 +6,7 @@ import { UtilityDock } from '@/components/utilities'
 import { DocumentTabBar } from '@/components/workspace/DocumentTabBar'
 import { WorkspaceDashboard } from '@/components/workspace/WorkspaceDashboard'
 import { useWorkspaceTabsStore, setWorkspaceTabsUser } from '@/stores/workspaceTabs'
+import { setFolderNavUser } from '@/stores/folders'
 import { WeeklyRecapModal } from '@/components/features/WeeklyRecapModal'
 import { SparksDrawer } from '@/components/features/SparksDrawer'
 import { SparkQuickAdd } from '@/components/features/SparkQuickAdd'
@@ -68,6 +69,7 @@ export function HomePage() {
 
   useEffect(() => {
     setWorkspaceTabsUser(user?.id ?? null)
+    setFolderNavUser(user?.id ?? null)
   }, [user?.id])
 
   useEffect(() => {

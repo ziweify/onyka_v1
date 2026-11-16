@@ -9,6 +9,8 @@ interface ImportDialogProps {
   isOpen: boolean
   onClose: () => void
   folderId?: string | null
+  /** Display path for the destination folder (e.g. "Work / Docs") */
+  folderLabel?: string
   onImported: (noteId: string, title: string) => void
 }
 
@@ -20,7 +22,13 @@ function detectFormat(filename: string, text: string): 'md' | 'html' {
   return 'md'
 }
 
-export function ImportDialog({ isOpen, onClose, folderId, onImported }: ImportDialogProps) {
+export function ImportDialog({
+  isOpen,
+  onClose,
+  folderId,
+  folderLabel,
+  onImported,
+}: ImportDialogProps) {
   const { t } = useTranslation()
   const focusTrapRef = useFocusTrap(isOpen)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -76,7 +84,13 @@ export function ImportDialog({ isOpen, onClose, folderId, onImported }: ImportDi
             <IoCloseOutline className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-sm text-[var(--color-text-secondary)] mb-4">{t('import.description')}</p>
+        <p className="text-sm text-[var(--color-text-secondary)] mb-3">{t('import.description')}</p>
+        {folderLabel != null && folderLabel !== '' && (
+          <p className="text-xs text-[var(--color-text-tertiary)] mb-4">
+            {t('import.destination')}:{' '}
+            <span className="font-medium text-[var(--color-text-secondary)]">{folderLabel}</span>
+          </p>
+        )}
         <input
           ref={fileRef}
           type="file"

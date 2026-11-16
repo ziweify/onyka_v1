@@ -14,11 +14,13 @@ const MAX_CONTENT_LENGTH = 20_000_000
 const createPageSchema = z.object({
   title: z.string().max(500).optional(),
   content: z.string().max(MAX_CONTENT_LENGTH).optional(),
+  mode: z.enum(['text', 'markdown']).optional(),
 })
 
 const updatePageSchema = z.object({
   title: z.string().max(500).optional(),
   content: z.string().max(MAX_CONTENT_LENGTH).optional(),
+  mode: z.enum(['text', 'markdown']).optional(),
   isLocked: z.boolean().optional(),
 })
 

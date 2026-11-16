@@ -320,6 +320,7 @@
     "description": "Import Markdown, or a full saved page HTML (e.g. SingleFile) with original styles for offline viewing.",
     "choose_file": "Choose file",
     "error": "Import failed. Check the file format and try again.",
+    "error_too_large": "File is too large. Try saving without embedded images, or a smaller page.",
     "snapshot_badge": "Web snapshot",
     "snapshot_title": "Saved page",
     "snapshot_open": "Open in new tab",

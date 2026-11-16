@@ -81,16 +81,19 @@ export class ImportService {
       throw new ImportServiceError('Content is required', 'CONTENT_REQUIRED', 400)
     }
 
-    if (input.format === 'html' && isFullPageHtml(raw)) {
+    // All HTML imports become offline web snapshots (preserves SingleFile styles).
+    // Markdown still becomes editable TipTap notes.
+    if (input.format === 'html') {
+      console.info('[import] web-snapshot', {
+        bytes: Buffer.byteLength(raw, 'utf8'),
+        fullPage: isFullPageHtml(raw),
+        title: input.title ?? null,
+      })
       return this.importWebSnapshot(ownerId, raw, input.title, input.folderId)
     }
 
     let html: string
-    if (input.format === 'md') {
-      html = DOMPurify.sanitize(marked.parse(raw) as string)
-    } else {
-      html = DOMPurify.sanitize(raw)
-    }
+    html = DOMPurify.sanitize(marked.parse(raw) as string)
 
     const title =
       input.title?.trim() ||

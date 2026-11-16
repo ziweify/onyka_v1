@@ -34,6 +34,10 @@ export function ImportDialog({ isOpen, onClose, folderId, onImported }: ImportDi
       const text = await file.text()
       const format = detectFormat(file.name, text)
       const titleFromFile = file.name.replace(/\.(md|markdown|html?|txt)$/i, '').trim()
+      if (format === 'html' && text.length > 40_000_000) {
+        setError(t('import.error_too_large'))
+        return
+      }
       const { note } = await notesApi.import({
         format,
         content: text,
@@ -42,7 +46,8 @@ export function ImportDialog({ isOpen, onClose, folderId, onImported }: ImportDi
       })
       onImported(note.id, note.title)
       onClose()
-    } catch {
+    } catch (err) {
+      console.error('[import] failed', err)
       setError(t('import.error'))
     } finally {
       setImporting(false)

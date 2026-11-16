@@ -320,6 +320,7 @@
     "description": "支持 Markdown，以及 SingleFile 等完整网页 HTML（保留原样式，离线可看）。",
     "choose_file": "选择文件",
     "error": "导入失败，请检查文件格式后重试。",
+    "error_too_large": "文件过大，请换较小的网页再试（建议 SingleFile 关闭图片内嵌或压缩后导入）。",
     "snapshot_badge": "网页快照",
     "snapshot_title": "已保存的网页",
     "snapshot_open": "在新标签打开",

@@ -320,6 +320,7 @@
     "description": "Importer du Markdown, ou une page HTML complète (ex. SingleFile) avec ses styles pour consultation hors ligne.",
     "choose_file": "Choisir un fichier",
     "error": "Échec de l’import. Vérifiez le format du fichier.",
+    "error_too_large": "Fichier trop volumineux. Réessayez sans images intégrées, ou avec une page plus petite.",
     "snapshot_badge": "Instantané web",
     "snapshot_title": "Page enregistrée",
     "snapshot_open": "Ouvrir dans un nouvel onglet",

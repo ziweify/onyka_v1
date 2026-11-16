@@ -13,12 +13,20 @@ import {
   IoFolderOutline,
   IoPeopleOutline,
   IoDownloadOutline,
+  IoColorPaletteOutline,
 } from 'react-icons/io5'
 import { ShareDialog, ExportDialog } from '@/components/features'
 import { IconPicker } from '@/components/ui'
 import { getIconByName, isEmoji } from '@/utils/icons'
 import { useSharedFolderIds } from '@/stores/shares'
+import { useThemeStore } from '@/stores/theme'
+import {
+  folderRowBackground,
+  folderSectionBackground,
+  resolveFolderColorHex,
+} from '@/utils/folderColor'
 import { SortableNoteItem } from './SortableNoteItem'
+import { FolderColorPicker } from './FolderColorPicker'
 import { makeDragId, sortItemsAlphabetically } from './use-sidebar-dnd'
 import type { DragItemId, DropTarget } from './use-sidebar-dnd'
 import type { FolderTreeItem } from '@/services/api'
@@ -41,6 +49,7 @@ interface SortableFolderItemProps {
   onDeleteFolder: (folderId: string, folderName: string) => void
   onRenameFolder: (folderId: string, newName: string) => void
   onChangeFolderIcon: (folderId: string, icon: string) => void
+  onChangeFolderColor: (folderId: string, color: string | null) => void
   onCreateNoteInFolder: (folderId: string, title: string) => void
   onCreateFolderInFolder: (parentId: string, name: string) => void
   newNoteId?: string | null
@@ -68,6 +77,7 @@ export function SortableFolderItem({
   onDeleteFolder,
   onRenameFolder,
   onChangeFolderIcon,
+  onChangeFolderColor,
   onCreateNoteInFolder,
   onCreateFolderInFolder,
   newNoteId,
@@ -77,11 +87,14 @@ export function SortableFolderItem({
   isMobile,
 }: SortableFolderItemProps) {
   const { t } = useTranslation()
+  const theme = useThemeStore((s) => s.theme)
   const sharedFolderIds = useSharedFolderIds()
   const isFolderShared = sharedFolderIds.has(folder.id)
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number } | null>(null)
   const [showParticles, setShowParticles] = useState(false)
   const [showIconPicker, setShowIconPicker] = useState(false)
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [colorPickerAnchor, setColorPickerAnchor] = useState<{ x: number; y: number } | null>(null)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -140,6 +153,7 @@ export function SortableFolderItem({
     const handleCloseOtherMenus = () => {
       setMenuPosition(null)
       setShowIconPicker(false)
+      setShowColorPicker(false)
     }
     window.addEventListener('close-context-menus', handleCloseOtherMenus)
     return () => window.removeEventListener('close-context-menus', handleCloseOtherMenus)
@@ -167,6 +181,7 @@ export function SortableFolderItem({
   const closeMenu = () => {
     setMenuPosition(null)
     setShowIconPicker(false)
+    setShowColorPicker(false)
   }
 
   const handleStartRename = (e: React.MouseEvent) => {
@@ -249,6 +264,7 @@ export function SortableFolderItem({
   const folderIconValue = folder.icon || 'Folder'
   const folderIsEmoji = isEmoji(folderIconValue)
   const FolderIcon = folderIsEmoji ? null : getIconByName(folderIconValue)
+  const folderColorHex = resolveFolderColorHex(folder.color, theme)
 
   const renderFolderIcon = (className: string) => {
     if (folderIsEmoji) {
@@ -258,7 +274,9 @@ export function SortableFolderItem({
         </span>
       )
     }
-    return FolderIcon ? <FolderIcon className={className} /> : null
+    return FolderIcon ? (
+      <FolderIcon className={className} style={folderColorHex ? { color: folderColorHex } : undefined} />
+    ) : null
   }
 
   if (isRenaming) {
@@ -318,13 +336,20 @@ export function SortableFolderItem({
               ? 'bg-[var(--color-accent)]/15'
               : isMultiSelected
                 ? 'bg-[var(--color-accent)]/15 ring-1 ring-[var(--color-accent)]/30'
-                : hasSelectedNote
+                : hasSelectedNote && !folderColorHex
                   ? 'bg-[var(--color-accent)]/6'
-                  : 'hover:bg-[var(--color-bg-tertiary)]/80 hover:text-[var(--color-text-primary)]'
+                  : !folderColorHex
+                    ? 'hover:bg-[var(--color-bg-tertiary)]/80 hover:text-[var(--color-text-primary)]'
+                    : 'hover:brightness-[0.98] dark:hover:brightness-110'
           }
           ${isNew ? 'animate-item-success' : ''}
         `}
-        style={{ paddingLeft: `${paddingLeft}px` }}
+        style={{
+          paddingLeft: `${paddingLeft}px`,
+          ...(folderColorHex && !showDropInto && !isMultiSelected
+            ? { backgroundColor: folderRowBackground(folderColorHex, hasSelectedNote ? 0.22 : 0.14) }
+            : {}),
+        }}
       >
         {showParticles && (
           <div className="item-particles">
@@ -340,18 +365,29 @@ export function SortableFolderItem({
         {isMultiSelected && (
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 rounded-full bg-[var(--color-accent)]" />
         )}
+        {!isMultiSelected && folderColorHex && (
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full"
+            style={{ backgroundColor: folderColorHex }}
+          />
+        )}
 
         <IoChevronForward
           className={`
             w-4 h-4 transition-transform duration-200 flex-shrink-0
             ${isExpanded ? 'rotate-90' : ''}
             ${!hasContent ? 'invisible' : ''}
-            ${hasSelectedNote ? 'text-[var(--color-accent)]/60' : 'text-[var(--color-text-tertiary)]'}
+            ${hasSelectedNote && !folderColorHex ? 'text-[var(--color-accent)]/60' : 'text-[var(--color-text-tertiary)]'}
           `}
+          style={folderColorHex ? { color: folderColorHex } : undefined}
         />
 
         {renderFolderIcon(
-          `w-4 h-4 flex-shrink-0 transition-colors ${hasSelectedNote ? 'text-[var(--color-accent)]' : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'}`
+          `w-4 h-4 flex-shrink-0 transition-colors ${
+            hasSelectedNote && !folderColorHex
+              ? 'text-[var(--color-accent)]'
+              : 'text-[var(--color-text-tertiary)] group-hover:text-[var(--color-text-secondary)]'
+          }`
         )}
 
         <span
@@ -433,6 +469,25 @@ export function SortableFolderItem({
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
+                    const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
+                    setMenuPosition(null)
+                    setColorPickerAnchor({ x: rect.left, y: rect.bottom + 4 })
+                    setShowColorPicker(true)
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                >
+                  <IoColorPaletteOutline className="w-4 h-4" />
+                  {t('sidebar.folder_color')}
+                  {folderColorHex && (
+                    <span
+                      className="ml-auto w-3 h-3 rounded-full border border-black/10"
+                      style={{ backgroundColor: folderColorHex }}
+                    />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
                     closeMenu()
                     setShowShareDialog(true)
                   }}
@@ -480,6 +535,18 @@ export function SortableFolderItem({
           />
         )}
 
+        {showColorPicker && (
+          <FolderColorPicker
+            selectedColor={folder.color ?? null}
+            anchor={colorPickerAnchor ?? undefined}
+            onSelect={(color) => {
+              onChangeFolderColor(folder.id, color)
+              setShowColorPicker(false)
+            }}
+            onClose={() => setShowColorPicker(false)}
+          />
+        )}
+
         <ShareDialog
           isOpen={showShareDialog}
           onClose={() => setShowShareDialog(false)}
@@ -499,7 +566,10 @@ export function SortableFolderItem({
 
       {isExpanded && (hasContent || showNewNoteInput || showNewFolderInput) && (
         <div
-          className={`relative ml-2 animate-folder-expand ${hasSelectedNote ? 'bg-[var(--color-accent)]/[0.03]' : ''}`}
+          className={`relative ml-2 animate-folder-expand rounded-lg ${
+            !folderColorHex && hasSelectedNote ? 'bg-[var(--color-accent)]/[0.03]' : ''
+          }`}
+          style={folderColorHex ? { backgroundColor: folderSectionBackground(folderColorHex) } : undefined}
         >
           <div
             className="absolute top-0 bottom-2 w-px bg-[var(--color-border)]"
@@ -565,6 +635,7 @@ export function SortableFolderItem({
                     onDeleteFolder={onDeleteFolder}
                     onRenameFolder={onRenameFolder}
                     onChangeFolderIcon={onChangeFolderIcon}
+                    onChangeFolderColor={onChangeFolderColor}
                     onCreateNoteInFolder={onCreateNoteInFolder}
                     onCreateFolderInFolder={onCreateFolderInFolder}
                     newNoteId={newNoteId}

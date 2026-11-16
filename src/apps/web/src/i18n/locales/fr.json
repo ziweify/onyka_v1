@@ -31,6 +31,8 @@
     "sparks_btn": "Sparks",
     "file_tree": "Arborescence",
     "new_folder": "Dossier",
+    "folder_color": "Couleur du dossier",
+    "folder_color_default": "Par défaut",
     "tags": "Tags",
     "no_notes": "Aucune note",
     "no_notes_with_tags": "Aucune note avec ces tags",

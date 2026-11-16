@@ -634,6 +634,11 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     fetchFolderTree()
   }
 
+  const handleChangeFolderColor = async (folderId: string, color: string | null) => {
+    await updateFolder(folderId, { color })
+    fetchFolderTree()
+  }
+
   const handleRenameFolder = async (folderId: string, newName: string) => {
     await updateFolder(folderId, { name: newName })
   }
@@ -1023,6 +1028,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                     onDeleteFolder={handleDeleteFolder}
                     onRenameFolder={handleRenameFolder}
                     onChangeFolderIcon={handleChangeFolderIcon}
+                    onChangeFolderColor={handleChangeFolderColor}
                     onCreateNoteInFolder={handleCreateNoteInFolder}
                     onCreateFolderInFolder={handleCreateFolderInFolder}
                     newNoteId={newNoteId}

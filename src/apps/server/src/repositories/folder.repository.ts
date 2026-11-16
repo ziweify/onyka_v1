@@ -179,10 +179,13 @@ export class FolderRepository {
     const siblings = await this.findByParent(ownerId, input.parentId ?? null)
     const nextPosition = siblings.length > 0 ? Math.max(...siblings.map((f) => f.position)) + 1 : 0
 
+    const color = input.color ?? null
+
     await db.insert(folders).values({
       id,
       name: input.name,
       icon,
+      color,
       parentId: input.parentId ?? null,
       position: nextPosition,
       ownerId,
@@ -194,6 +197,7 @@ export class FolderRepository {
       id,
       name: input.name,
       icon,
+      color,
       parentId: input.parentId ?? null,
       position: nextPosition,
       ownerId,
@@ -208,6 +212,7 @@ export class FolderRepository {
 
     if (input.name !== undefined) updateData.name = input.name
     if (input.icon !== undefined) updateData.icon = input.icon
+    if (input.color !== undefined) updateData.color = input.color
     if (input.parentId !== undefined) updateData.parentId = input.parentId
     if (input.position !== undefined) updateData.position = input.position
 
@@ -335,6 +340,7 @@ export class FolderRepository {
       id: row.id,
       name: row.name,
       icon: row.icon,
+      color: row.color ?? null,
       parentId: row.parentId,
       position: row.position,
       ownerId: row.ownerId,

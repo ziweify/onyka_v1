@@ -1,14 +1,27 @@
 import type { FolderTreeItem } from '@/services/api'
 import { findFolderById } from '@/components/layout/sidebar'
 
+export interface PathSegment {
+  name: string
+  color: string | null
+}
+
 /** Folder names from root to the note's parent folder. */
 export function getFolderPathSegments(
   folderTree: FolderTreeItem[],
   folderId: string | null
 ): string[] {
+  return getFolderPathItems(folderTree, folderId).map((s) => s.name)
+}
+
+/** Folder path items (name + color) from root to the note's parent folder. */
+export function getFolderPathItems(
+  folderTree: FolderTreeItem[],
+  folderId: string | null
+): PathSegment[] {
   if (!folderId) return []
 
-  const segments: string[] = []
+  const segments: PathSegment[] = []
   let currentId: string | null = folderId
   const visited = new Set<string>()
 
@@ -16,7 +29,7 @@ export function getFolderPathSegments(
     visited.add(currentId)
     const folder = findFolderById(folderTree, currentId)
     if (!folder) break
-    segments.unshift(folder.name)
+    segments.unshift({ name: folder.name, color: folder.color ?? null })
     currentId = folder.parentId
   }
 
@@ -53,17 +66,20 @@ export function buildNoteStructurePath(options: {
   /** Label for notes shared by others (folder tree unavailable). */
   sharedPrefixLabel?: string | null
   sharedByName?: string | null
-}): string[] {
+}): PathSegment[] {
   if (options.sharedByName) {
     const prefix = options.sharedPrefixLabel?.trim()
     return prefix
-      ? [prefix, options.sharedByName]
-      : [options.sharedByName]
+      ? [
+          { name: prefix, color: null },
+          { name: options.sharedByName, color: null },
+        ]
+      : [{ name: options.sharedByName, color: null }]
   }
 
-  const folderSegments = getFolderPathSegments(options.folderTree, options.folderId)
+  const folderSegments = getFolderPathItems(options.folderTree, options.folderId)
   if (folderSegments.length === 0) {
-    return [options.rootLabel]
+    return [{ name: options.rootLabel, color: null }]
   }
 
   return folderSegments

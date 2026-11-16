@@ -46,6 +46,7 @@ export const folders = sqliteTable(
     id: text('id').primaryKey(),
     name: text('name').notNull(),
     icon: text('icon').notNull().default('Folder'),
+    color: text('color'),
     parentId: text('parent_id').references((): AnySQLiteColumn => folders.id, { onDelete: 'cascade' }),
     position: integer('position').notNull().default(0),
     ownerId: text('owner_id')

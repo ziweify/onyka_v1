@@ -16,6 +16,7 @@ const updateFolderSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   parentId: z.string().nullable().optional(),
   icon: z.string().max(100).optional(),
+  color: z.string().max(32).nullable().optional(),
 })
 
 const deleteFolderSchema = z.object({

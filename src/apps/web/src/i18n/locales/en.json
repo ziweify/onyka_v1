@@ -31,6 +31,8 @@
     "sparks_btn": "Sparks",
     "file_tree": "File tree",
     "new_folder": "Folder",
+    "folder_color": "Folder color",
+    "folder_color_default": "Default",
     "tags": "Tags",
     "no_notes": "No notes yet",
     "no_notes_with_tags": "No notes with selected tags",

@@ -2,6 +2,8 @@ export interface Folder {
   id: string
   name: string
   icon: string
+  /** Accent color id (e.g. blue, amber). Null = default theme. */
+  color: string | null
   parentId: string | null
   position: number
   ownerId: string
@@ -43,12 +45,14 @@ export interface FolderWithChildren extends Folder {
 export interface FolderCreateInput {
   name: string
   icon?: string
+  color?: string | null
   parentId?: string | null
 }
 
 export interface FolderUpdateInput {
   name?: string
   icon?: string
+  color?: string | null
   parentId?: string | null
   position?: number
 }

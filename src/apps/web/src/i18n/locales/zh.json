@@ -31,6 +31,8 @@
     "sparks_btn": "灵感",
     "file_tree": "笔记目录",
     "new_folder": "文件夹",
+    "folder_color": "文件夹颜色",
+    "folder_color_default": "默认颜色",
     "tags": "标签",
     "no_notes": "暂无笔记",
     "no_notes_with_tags": "没有符合所选标签的笔记",

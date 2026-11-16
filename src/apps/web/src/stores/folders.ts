@@ -16,7 +16,7 @@ interface FoldersState {
   fetchFolders: () => Promise<void>
   fetchFolderTree: () => Promise<void>
   createFolder: (name: string, parentId?: string | null) => Promise<Folder>
-  updateFolder: (id: string, data: { name?: string; icon?: string; parentId?: string | null }) => Promise<void>
+  updateFolder: (id: string, data: { name?: string; icon?: string; color?: string | null; parentId?: string | null }) => Promise<void>
   deleteFolder: (id: string, cascade?: boolean) => Promise<void>
   deleteMultipleFolders: (ids: string[]) => Promise<void>
   moveNoteToFolder: (noteId: string, folderId: string | null) => Promise<void>

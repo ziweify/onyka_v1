@@ -110,6 +110,9 @@ export function EditorBubbleMenu({ editor, noteId }: EditorBubbleMenuProps) {
       ref={setMenuRef}
       editor={editor}
       shouldShow={({ editor }) => {
+        // Reading mode (non-editable) must not show formatting toolbar on selection
+        if (!editor.isEditable) return false
+
         const { selection } = editor.state
         if (selection.empty) return false
 

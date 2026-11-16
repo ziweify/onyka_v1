@@ -1,12 +1,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, SwapIOFields, ToolActions, ToolButton, ToolError } from '../ToolShell'
 
 export function JsonTool() {
   const { t } = useTranslation()
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const swap = (nextIn: string, nextOut: string) => {
+    setInput(nextIn)
+    setOutput(nextOut)
+    setError(null)
+  }
 
   const run = (mode: 'format' | 'minify' | 'validate') => {
     setError(null)
@@ -29,22 +35,20 @@ export function JsonTool() {
         <ToolButton primary onClick={() => run('format')}>{t('utilities.json_format')}</ToolButton>
         <ToolButton onClick={() => run('minify')}>{t('utilities.json_minify')}</ToolButton>
         <ToolButton onClick={() => run('validate')}>{t('utilities.json_validate')}</ToolButton>
-        <SwapIOButton
-          input={input}
-          output={output}
-          onSwap={(nextIn, nextOut) => {
-            setInput(nextIn)
-            setOutput(nextOut)
-            setError(null)
-          }}
-        />
+        <SwapIOButton input={input} output={output} onSwap={swap} />
         <CopyButton text={output} />
       </ToolActions>
       <ToolError message={error} />
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-2">
-        <ToolField label={t('utilities.input')} value={input} onChange={setInput} placeholder="{}" />
-        <ToolField label={t('utilities.output')} value={output} onChange={setOutput} />
-      </div>
+      <SwapIOFields
+        inputLabel={t('utilities.input')}
+        outputLabel={t('utilities.output')}
+        input={input}
+        output={output}
+        onInputChange={setInput}
+        onOutputChange={setOutput}
+        onSwap={swap}
+        inputPlaceholder="{}"
+      />
     </div>
   )
 }

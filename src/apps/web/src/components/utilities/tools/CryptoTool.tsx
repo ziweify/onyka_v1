@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { aesGcmDecrypt, aesGcmEncrypt, shaDigest } from '../codecUtils'
 import { md5 } from '../md5'
-import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, SwapIOFields, ToolActions, ToolButton, ToolError } from '../ToolShell'
 
 type HashAlgo = 'md5' | 'sha1' | 'sha256' | 'sha512'
 
@@ -14,6 +14,12 @@ export function CryptoTool() {
   const [password, setPassword] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const swap = (nextIn: string, nextOut: string) => {
+    setInput(nextIn)
+    setOutput(nextOut)
+    setError(null)
+  }
 
   const runHash = async () => {
     setError(null)
@@ -60,15 +66,7 @@ export function CryptoTool() {
             <ToolButton onClick={() => void runAes('dec')}>{t('utilities.decrypt')}</ToolButton>
           </>
         )}
-        <SwapIOButton
-          input={input}
-          output={output}
-          onSwap={(nextIn, nextOut) => {
-            setInput(nextIn)
-            setOutput(nextOut)
-            setError(null)
-          }}
-        />
+        <SwapIOButton input={input} output={output} onSwap={swap} />
         <CopyButton text={output} />
       </ToolActions>
       {tab === 'aes' && (
@@ -84,10 +82,15 @@ export function CryptoTool() {
         <p className="text-[10px] text-[var(--color-text-tertiary)]">{t('utilities.hash_hint')}</p>
       )}
       <ToolError message={error} />
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-2">
-        <ToolField label={t('utilities.input')} value={input} onChange={setInput} />
-        <ToolField label={t('utilities.output')} value={output} onChange={setOutput} />
-      </div>
+      <SwapIOFields
+        inputLabel={t('utilities.input')}
+        outputLabel={t('utilities.output')}
+        input={input}
+        output={output}
+        onInputChange={setInput}
+        onOutputChange={setOutput}
+        onSwap={swap}
+      />
     </div>
   )
 }

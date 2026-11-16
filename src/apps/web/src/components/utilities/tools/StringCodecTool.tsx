@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { base64ToUtf8, utf8ToBase64 } from '../codecUtils'
-import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, SwapIOFields, ToolActions, ToolButton, ToolError } from '../ToolShell'
 
 type Mode = 'url' | 'base64'
 
@@ -11,6 +11,12 @@ export function StringCodecTool() {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const swap = (nextIn: string, nextOut: string) => {
+    setInput(nextIn)
+    setOutput(nextOut)
+    setError(null)
+  }
 
   const encode = () => {
     setError(null)
@@ -37,22 +43,19 @@ export function StringCodecTool() {
         <ToolButton primary={mode === 'url'} onClick={() => setMode('url')}>URL</ToolButton>
         <ToolButton primary onClick={encode}>{t('utilities.encode')}</ToolButton>
         <ToolButton onClick={decode}>{t('utilities.decode')}</ToolButton>
-        <SwapIOButton
-          input={input}
-          output={output}
-          onSwap={(nextIn, nextOut) => {
-            setInput(nextIn)
-            setOutput(nextOut)
-            setError(null)
-          }}
-        />
+        <SwapIOButton input={input} output={output} onSwap={swap} />
         <CopyButton text={output} />
       </ToolActions>
       <ToolError message={error} />
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-2">
-        <ToolField label={t('utilities.input')} value={input} onChange={setInput} />
-        <ToolField label={t('utilities.output')} value={output} onChange={setOutput} />
-      </div>
+      <SwapIOFields
+        inputLabel={t('utilities.input')}
+        outputLabel={t('utilities.output')}
+        input={input}
+        output={output}
+        onInputChange={setInput}
+        onOutputChange={setOutput}
+        onSwap={swap}
+      />
     </div>
   )
 }

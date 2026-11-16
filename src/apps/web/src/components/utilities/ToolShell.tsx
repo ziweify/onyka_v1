@@ -119,6 +119,54 @@ export function SwapIOButton({
   )
 }
 
+/** Two-column IO fields with a visible convert/swap control in the middle. */
+export function SwapIOFields({
+  inputLabel,
+  outputLabel,
+  input,
+  output,
+  onInputChange,
+  onOutputChange,
+  onSwap,
+  disabled,
+  inputPlaceholder,
+}: {
+  inputLabel: string
+  outputLabel: string
+  input: string
+  output: string
+  onInputChange: (v: string) => void
+  onOutputChange: (v: string) => void
+  onSwap: (nextInput: string, nextOutput: string) => void
+  disabled?: boolean
+  inputPlaceholder?: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-2 items-stretch">
+      <ToolField
+        label={inputLabel}
+        value={input}
+        onChange={onInputChange}
+        placeholder={inputPlaceholder}
+      />
+      <div className="flex md:flex-col items-center justify-center gap-1 py-1">
+        <button
+          type="button"
+          disabled={disabled || (!input && !output)}
+          onClick={() => onSwap(output, input)}
+          title={t('utilities.swap_io')}
+          className="h-8 px-3 md:px-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] text-[11px] font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] disabled:opacity-40 inline-flex items-center gap-1"
+        >
+          <IoSwapHorizontalOutline className="w-4 h-4 md:rotate-90" />
+          <span>{t('utilities.swap_io')}</span>
+        </button>
+      </div>
+      <ToolField label={outputLabel} value={output} onChange={onOutputChange} />
+    </div>
+  )
+}
+
 export function ToolError({ message }: { message: string | null }) {
   if (!message) return null
   return <p className="text-[11px] text-red-500 shrink-0">{message}</p>

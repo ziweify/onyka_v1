@@ -7,7 +7,7 @@ import {
   type TranslateDirection,
   type TranslatePair,
 } from '../translateUtils'
-import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, SwapIOFields, ToolActions, ToolButton, ToolError } from '../ToolShell'
 
 const PAIRS: TranslatePair[] = ['zh-en', 'zh-ja', 'zh-ko']
 
@@ -110,19 +110,23 @@ export function TranslateTool() {
 
       <ToolError message={error} />
 
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 gap-2">
-        <ToolField
-          label={`${t('utilities.input')} (${langs.sourceLabel})`}
-          value={input}
-          onChange={setInput}
-          placeholder={t('utilities.translate_placeholder')}
-        />
-        <ToolField
-          label={`${t('utilities.output')} (${langs.targetLabel})`}
-          value={output}
-          onChange={setOutput}
-        />
-      </div>
+      <SwapIOFields
+        inputLabel={`${t('utilities.input')} (${langs.sourceLabel})`}
+        outputLabel={`${t('utilities.output')} (${langs.targetLabel})`}
+        input={input}
+        output={output}
+        onInputChange={setInput}
+        onOutputChange={setOutput}
+        disabled={busy}
+        inputPlaceholder={t('utilities.translate_placeholder')}
+        onSwap={(nextIn, nextOut) => {
+          setDirection((d) => (d === 'from-zh' ? 'to-zh' : 'from-zh'))
+          setInput(nextIn)
+          setOutput(nextOut)
+          setError(null)
+          setEngineHint('')
+        }}
+      />
     </div>
   )
 }

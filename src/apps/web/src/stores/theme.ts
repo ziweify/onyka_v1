@@ -275,6 +275,13 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const themeBase = theme === 'dark' ? darkThemeBase : lightThemeBase
     updateDocumentTheme(theme, themeBase, accentColor, editorFontSize, editorFontFamily)
     persistTheme({ theme, darkThemeBase, lightThemeBase, accentColor, autoFolderColors })
+
+    // Preference already on (e.g. previous session): fill any still-uncolored folders.
+    if (autoFolderColors) {
+      void import('./folders')
+        .then(({ useFoldersStore }) => useFoldersStore.getState().applyAutoColorsToUncolored())
+        .catch(() => {})
+    }
   },
 
   setTheme: (theme) => {
@@ -350,6 +357,12 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       autoFolderColors,
     })
     safeUpdatePreferences({ autoFolderColors })
+    // Turning on: paint existing uncolored folders immediately (local semantics).
+    if (autoFolderColors) {
+      void import('./folders')
+        .then(({ useFoldersStore }) => useFoldersStore.getState().applyAutoColorsToUncolored())
+        .catch(() => {})
+    }
   },
 
   setEditorFontSize: (editorFontSize) => {

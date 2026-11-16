@@ -1,6 +1,20 @@
 import { create } from 'zustand'
 import type { Folder, FolderNote } from '@onyka/shared'
 import { foldersApi, type FolderTreeItem } from '@/services/api'
+import { useThemeStore } from './theme'
+import { suggestFolderColor } from '@/utils/suggestFolderColor'
+
+function collectFolders(tree: FolderTreeItem[]): FolderTreeItem[] {
+  const out: FolderTreeItem[] = []
+  const walk = (items: FolderTreeItem[]) => {
+    for (const item of items) {
+      out.push(item)
+      if (item.children?.length) walk(item.children)
+    }
+  }
+  walk(tree)
+  return out
+}
 
 interface PersistedFolderNav {
   expandedFolderIds: string[]
@@ -36,6 +50,8 @@ interface FoldersState {
   closeNewNoteInput: () => void
   toggleFolderSelection: (id: string) => void
   clearFolderSelection: () => void
+  /** Apply semantic colors to folders that currently have no color. */
+  applyAutoColorsToUncolored: () => Promise<number>
 }
 
 const STORAGE_PREFIX = 'onyka-folder-nav'
@@ -180,8 +196,6 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
   createFolder: async (name, parentId = null) => {
     set({ isLoading: true, error: null })
     try {
-      const { useThemeStore } = await import('./theme')
-      const { suggestFolderColor } = await import('@/utils/suggestFolderColor')
       const auto = useThemeStore.getState().autoFolderColors
       const color = auto ? suggestFolderColor(name) : undefined
       const { folder } = await foldersApi.create({
@@ -199,6 +213,24 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
       set({ error: 'Failed to create folder', isLoading: false })
       throw err
     }
+  },
+
+  applyAutoColorsToUncolored: async () => {
+    let tree = get().folderTree
+    if (!tree.length) {
+      await get().fetchFolderTree()
+      tree = get().folderTree
+    }
+    const targets = collectFolders(tree).filter((f) => !f.color)
+    if (targets.length === 0) return 0
+
+    await Promise.all(
+      targets.map((folder) =>
+        foldersApi.update(folder.id, { color: suggestFolderColor(folder.name) })
+      )
+    )
+    await get().fetchFolderTree()
+    return targets.length
   },
 
   updateFolder: async (id, data) => {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { IoMoonOutline, IoSunnyOutline, IoColorWandOutline, IoCheckmarkOutline } from 'react-icons/io5'
+import { IoMoonOutline, IoSunnyOutline, IoCheckmarkOutline } from 'react-icons/io5'
 import { useTranslation } from 'react-i18next'
 import { useThemeStore, THEME_BASES } from '@/stores/theme'
 
@@ -21,7 +21,7 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const portalRef = useRef<HTMLDivElement>(null)
-  const moreBtnRef = useRef<HTMLButtonElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 })
 
   useEffect(() => {
@@ -36,9 +36,9 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen || !moreBtnRef.current) return
-    const rect = moreBtnRef.current.getBoundingClientRect()
-    const popoverHeight = 340
+    if (!isOpen || !buttonRef.current) return
+    const rect = buttonRef.current.getBoundingClientRect()
+    const popoverHeight = 360
     const popoverWidth = 280
 
     let top: number
@@ -70,18 +70,40 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
 
   const currentThemeBase = getCurrentThemeBase()
   const availableThemes = THEME_BASES.filter((item) => item.mode === theme)
-
-  const btnBase = collapsed
-    ? 'p-1.5 rounded-md'
-    : 'w-7 h-7 rounded-lg'
-  const activeCls = 'bg-[var(--color-bg-primary)] text-[var(--color-accent)] shadow-sm'
-  const idleCls = 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+  const label = t('theme.style_picker_title')
 
   const popover = (
     <div className="rounded-2xl border p-4 w-[280px] floating-panel">
       <p className="text-[13px] font-medium text-[var(--color-text-primary)] mb-3">
         {t('theme.style_picker_title')}
       </p>
+
+      <div className="flex p-1 rounded-lg bg-[var(--color-bg-tertiary)] mb-4">
+        <button
+          type="button"
+          onClick={() => setTheme('light')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+            theme === 'light'
+              ? 'bg-[var(--color-bg-primary)] text-[var(--color-accent)] shadow-sm'
+              : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+          }`}
+        >
+          <IoSunnyOutline className="w-3.5 h-3.5" />
+          {t('settings.theme_light')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setTheme('dark')}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+            theme === 'dark'
+              ? 'bg-[var(--color-bg-primary)] text-[var(--color-accent)] shadow-sm'
+              : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)]'
+          }`}
+        >
+          <IoMoonOutline className="w-3.5 h-3.5" />
+          {t('settings.theme_dark')}
+        </button>
+      </div>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         {availableThemes.map((themeOption) => {
@@ -155,7 +177,9 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
         >
           <div
             className={`mt-0.5 w-9 h-5 rounded-full relative transition-colors flex-shrink-0 ${
-              autoFolderColors ? 'bg-[var(--color-accent)]' : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]'
+              autoFolderColors
+                ? 'bg-[var(--color-accent)]'
+                : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]'
             }`}
           >
             <span
@@ -177,100 +201,57 @@ export function ThemeToggle({ collapsed = false }: ThemeToggleProps) {
     </div>
   )
 
-  if (collapsed) {
-    return (
-      <div className="relative group/theme flex flex-col items-center gap-1" ref={containerRef}>
-        <button
-          type="button"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
-          aria-label={theme === 'dark' ? t('settings.theme_light') : t('settings.theme_dark')}
-        >
-          <div className="relative w-5 h-5">
-            <IoSunnyOutline
-              className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-                theme === 'dark' ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-50'
-              }`}
-            />
-            <IoMoonOutline
-              className={`absolute inset-0 w-full h-full transition-all duration-500 ${
-                theme === 'light' ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-50'
-              }`}
-            />
-          </div>
-        </button>
-        <button
-          ref={moreBtnRef}
-          type="button"
-          onClick={() => setIsOpen((v) => !v)}
-          className={`p-2 transition-colors ${
-            isOpen || autoFolderColors
-              ? 'text-[var(--color-accent)]'
-              : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]'
-          }`}
-          aria-label={t('theme.style_picker_title')}
-        >
-          <IoColorWandOutline className="w-5 h-5" />
-        </button>
-        {isOpen &&
-          createPortal(
-            <div
-              ref={portalRef}
-              className="fixed z-[9999] animate-scale-in"
-              style={{ top: popoverPosition.top, left: popoverPosition.left }}
-            >
-              {popover}
-            </div>,
-            document.body
-          )}
-      </div>
-    )
-  }
-
   return (
-    <div className="relative" ref={containerRef}>
-      <div className="flex items-center p-0.5 rounded-xl bg-[var(--color-bg-tertiary)]">
-        <button
-          type="button"
-          onClick={() => setTheme('light')}
-          className={`${btnBase} flex items-center justify-center transition-all duration-150 ${
-            theme === 'light' ? activeCls : idleCls
-          }`}
-          aria-label={t('settings.theme_light')}
-          title={t('settings.theme_light')}
-        >
-          <IoSunnyOutline className="w-3.5 h-3.5" />
-        </button>
-        <button
-          type="button"
-          onClick={() => setTheme('dark')}
-          className={`${btnBase} flex items-center justify-center transition-all duration-150 ${
-            theme === 'dark' ? activeCls : idleCls
-          }`}
-          aria-label={t('settings.theme_dark')}
-          title={t('settings.theme_dark')}
-        >
-          <IoMoonOutline className="w-3.5 h-3.5" />
-        </button>
-        <button
-          ref={moreBtnRef}
-          type="button"
-          onClick={() => setIsOpen((v) => !v)}
-          className={`${btnBase} flex items-center justify-center transition-all duration-150 ${
-            isOpen ? activeCls : idleCls
-          }`}
-          aria-label={t('theme.style_picker_title')}
-          title={t('theme.style_picker_title')}
-        >
-          <IoColorWandOutline className="w-3.5 h-3.5" />
-        </button>
-      </div>
+    <div className={collapsed ? 'relative group/theme' : 'relative'} ref={containerRef}>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        className={`
+          group relative flex items-center justify-center
+          text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]
+          transition-all duration-200 ease-out
+          ${collapsed
+            ? 'p-2'
+            : 'w-8 h-8 rounded-xl bg-[var(--color-bg-tertiary)] hover:bg-[var(--color-bg-elevated)]'
+          }
+          ${isOpen ? 'text-[var(--color-accent)]' : ''}
+        `}
+        aria-label={label}
+        title={collapsed ? undefined : label}
+      >
+        <div className={`relative ${collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'}`}>
+          <IoSunnyOutline
+            className={`
+              absolute inset-0 w-full h-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+              ${theme === 'dark'
+                ? 'opacity-100 rotate-0 scale-100'
+                : 'opacity-0 -rotate-180 scale-50'
+              }
+            `}
+          />
+          <IoMoonOutline
+            className={`
+              absolute inset-0 w-full h-full transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
+              ${theme === 'light'
+                ? 'opacity-100 rotate-0 scale-100'
+                : 'opacity-0 rotate-180 scale-50'
+              }
+            `}
+          />
+        </div>
+      </button>
+      {collapsed && (
+        <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] shadow-lg text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap opacity-0 scale-95 pointer-events-none group-hover/theme:opacity-100 group-hover/theme:scale-100 transition-all duration-200 delay-150">
+          {label}
+        </div>
+      )}
 
       {isOpen &&
         createPortal(
           <div
             ref={portalRef}
-            className="fixed z-[9999] animate-slide-up"
+            className={`fixed z-[9999] ${collapsed ? 'animate-scale-in' : 'animate-slide-up'}`}
             style={{ top: popoverPosition.top, left: popoverPosition.left }}
           >
             {popover}

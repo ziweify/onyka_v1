@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Sidebar, MobileHeader } from '@/components/layout'
 import { NoteEditor } from '@/components/editor'
+import { UtilityDock } from '@/components/utilities'
 import { DocumentTabBar } from '@/components/workspace/DocumentTabBar'
 import { WorkspaceDashboard } from '@/components/workspace/WorkspaceDashboard'
 import { useWorkspaceTabsStore, setWorkspaceTabsUser } from '@/stores/workspaceTabs'
@@ -256,15 +257,20 @@ export function HomePage() {
           </>
         )}
         {!focusMode && <DocumentTabBar />}
-        {activeView === 'home' ? (
-          <WorkspaceDashboard onNewNote={handleNewNote} refreshKey={dashboardRefresh} />
-        ) : currentNote && currentNote.id === activeView ? (
-          <NoteEditor note={currentNote} onUpdate={handleUpdateNote} onDelete={handleDeleteNote} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-secondary)]">
-            {t('common.loading')}
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            {activeView === 'home' ? (
+              <WorkspaceDashboard onNewNote={handleNewNote} refreshKey={dashboardRefresh} />
+            ) : currentNote && currentNote.id === activeView ? (
+              <NoteEditor note={currentNote} onUpdate={handleUpdateNote} onDelete={handleDeleteNote} />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-sm text-[var(--color-text-secondary)]">
+                {t('common.loading')}
+              </div>
+            )}
           </div>
-        )}
+          {!focusMode && <UtilityDock />}
+        </div>
       </main>
 
       {pendingRecap && (

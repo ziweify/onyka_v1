@@ -260,6 +260,13 @@
       "when": 1778544000000,
       "tag": "0036_auto_folder_colors",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1778630400000,
+      "tag": "0037_note_encryption",
+      "breakpoints": true
     }
   ]
 }

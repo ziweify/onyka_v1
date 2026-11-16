@@ -16,7 +16,12 @@ export class SearchService {
       INSERT INTO notes_fts (title, content, note_id, owner_id)
       VALUES (?, ?, ?, ?)
     `)
-    insertStmt.run(note.title, this.extractTextContent(note.content), note.id, note.ownerId)
+    // Encrypted notes: index title only — body is client ciphertext.
+    const body =
+      note.isEncrypted || note.content.startsWith('ONYKAENC1.')
+        ? ''
+        : this.extractTextContent(note.content)
+    insertStmt.run(note.title, body, note.id, note.ownerId)
   }
 
   removeNoteFromIndex(noteId: string): void {

@@ -10,6 +10,7 @@ import {
   IoFolderOutline,
   IoArrowBackOutline,
   IoDocumentOutline,
+  IoLockClosedOutline,
 } from 'react-icons/io5'
 import { ShareDialog } from '@/components/features'
 import { useFoldersStore } from '@/stores/folders'
@@ -39,6 +40,7 @@ interface SortableNoteItemProps {
   onSelect: (e: React.MouseEvent) => void
   onDelete: () => void
   onRename: (newTitle: string) => void
+  onLock?: () => void
   isNew?: boolean
   isRemoving?: boolean
   isMobile?: boolean
@@ -53,6 +55,7 @@ export function SortableNoteItem({
   onSelect,
   onDelete,
   onRename,
+  onLock,
   isNew,
   isRemoving,
   isMobile,
@@ -222,9 +225,34 @@ export function SortableNoteItem({
         />
       )}
 
+      {note.isEncrypted && (
+        <IoLockClosedOutline
+          className="w-3.5 h-3.5 flex-shrink-0 text-[var(--color-accent)]"
+          title={t('notes.locked')}
+          aria-label={t('notes.locked')}
+        />
+      )}
+
       <span className={`truncate text-sm flex-1 ${isSelected ? 'font-medium' : ''}`}>
         {note.title || t('editor.untitled')}
       </span>
+
+      {!note.isEncrypted && onLock && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onLock()
+          }}
+          className={`rounded transition-opacity text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] ${
+            isMobile ? 'opacity-60 p-2' : 'opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-elevated)] p-1'
+          }`}
+          title={t('notes.lock')}
+          aria-label={t('notes.lock')}
+        >
+          <IoLockClosedOutline className="w-3.5 h-3.5" />
+        </button>
+      )}
 
       <button
         ref={menuButtonRef}

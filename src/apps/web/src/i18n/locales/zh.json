@@ -231,7 +231,31 @@
     "delete_confirm": "删除",
     "rename": "重命名",
     "change_icon": "更改图标",
-    "search_icons": "搜索图标…"
+    "search_icons": "搜索图标…",
+    "lock": "加锁",
+    "unlock_session": "锁定会话",
+    "locked": "已加锁"
+  },
+  "encryption": {
+    "enable_title": "为笔记加锁",
+    "enable_desc": "口令仅在本机用于加解密，不会上传到服务器。忘记口令将无法恢复内容。关闭浏览器、退出登录或闲置超时后需重新输入。",
+    "unlock_title": "解锁笔记",
+    "unlock_desc": "输入加锁口令以在本机解密。服务器从未保存过此口令。",
+    "password_label": "加锁口令",
+    "password_placeholder": "至少 8 位",
+    "confirm_label": "确认口令",
+    "confirm_placeholder": "再输入一次",
+    "password_too_short": "口令至少 8 位",
+    "password_mismatch": "两次口令不一致",
+    "enable_confirm": "加锁",
+    "unlock_confirm": "解锁",
+    "enable_failed": "加锁失败，请重试",
+    "unlock_failed": "口令错误或数据损坏",
+    "insecure_context": "当前不是安全上下文（需 HTTPS 或 localhost），浏览器禁止使用加密接口",
+    "locked_placeholder": "此笔记已加锁，解锁后可编辑",
+    "lock_session": "立即上锁（清除内存密钥）",
+    "show_password": "显示口令",
+    "hide_password": "隐藏口令"
   },
   "folders": {
     "delete_title": "删除文件夹？",

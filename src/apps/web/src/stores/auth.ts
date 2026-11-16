@@ -15,9 +15,11 @@ import { usePagesStore } from './pages'
 import { useSettingsStore } from './settings'
 import { resetSocket } from '@/hooks/useSocket'
 import { resetWorkspaceTabs } from './workspaceTabs'
+import { useNoteEncryptionStore } from './noteEncryption'
 
 /** Resets all user-scoped stores on logout to prevent data leaking between sessions. */
 function clearAllUserStores() {
+  useNoteEncryptionStore.getState().clearAll()
   useNotesStore.setState({ notes: [], currentNote: null, searchResults: [], selectedNoteIds: [], isLoading: false, error: null })
   resetFolderNav()
   useTagsStore.setState({ tags: [], isLoading: false, error: null })

@@ -22,8 +22,12 @@ import { DndContext, DragOverlay, pointerWithin, useDroppable } from '@dnd-kit/c
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { ThemeToggle, AccentColorPicker, SparkIcon } from '@/components/ui'
-import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog, SessionsDialog } from '@/components/features'
-import { sessionsApi } from '@/services/api'
+import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog, SessionsDialog, NoteLockDialog } from '@/components/features'
+import { sessionsApi, notesApi, pagesApi } from '@/services/api'
+import { encryptPlaintext } from '@/utils/noteCrypto'
+import { useNoteEncryptionStore } from '@/stores/noteEncryption'
+import type { NoteEncryptionMeta } from '@onyka/shared'
+import { toast } from '@/components/ui/Toast'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
 import { useTagsStore } from '@/stores/tags'
@@ -231,6 +235,8 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const [showProfile, setShowProfile] = useState(false)
   const [showSessions, setShowSessions] = useState(false)
   const [sessionCount, setSessionCount] = useState<number | null>(null)
+  const [lockTarget, setLockTarget] = useState<{ id: string; title: string } | null>(null)
+  const unlockNoteSession = useNoteEncryptionStore((s) => s.unlock)
 
   const [deleteDialog, setDeleteDialog] = useState<{
     type: 'note' | 'folder' | 'mixed'
@@ -1058,6 +1064,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                     onSelectFolder={handleSelectFolder}
                     onDeleteNote={handleDeleteNote}
                     onRenameNote={handleRenameNote}
+                    onLockNote={(noteId, noteTitle) => setLockTarget({ id: noteId, title: noteTitle })}
                     onDeleteFolder={handleDeleteFolder}
                     onRenameFolder={handleRenameFolder}
                     onChangeFolderIcon={handleChangeFolderIcon}
@@ -1086,6 +1093,11 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
                     onSelect={(e) => handleSelectNote(note.id, e)}
                     onDelete={() => handleDeleteNote(note.id, note.title)}
                     onRename={(newTitle) => handleRenameNote(note.id, newTitle)}
+                    onLock={
+                      !note.isEncrypted
+                        ? () => setLockTarget({ id: note.id, title: note.title })
+                        : undefined
+                    }
                     isNew={note.id === newNoteId}
                     isRemoving={removingNoteIds.has(note.id)}
                     isMobile={isMobile}
@@ -1739,6 +1751,39 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
           refreshSessionCount()
         }}
         onSessionsChanged={refreshSessionCount}
+      />
+      <NoteLockDialog
+        isOpen={lockTarget != null}
+        mode="enable"
+        noteTitle={lockTarget?.title}
+        onClose={() => setLockTarget(null)}
+        onUnlocked={async (dek, meta: NoteEncryptionMeta) => {
+          const target = lockTarget
+          if (!target) throw new Error('NO_NOTE')
+          const noteId = target.id
+          const { pages } = await pagesApi.list(noteId)
+          for (const page of pages) {
+            if (page.isLocked) {
+              await pagesApi.update(page.id, { isLocked: false })
+            }
+            const enc = await encryptPlaintext(page.content || '', dek)
+            await pagesApi.update(page.id, { content: enc })
+          }
+          const { note } = await notesApi.get(noteId)
+          const encNoteContent = await encryptPlaintext(note.content || '', dek)
+          await notesApi.update(noteId, {
+            isEncrypted: true,
+            encryptionMeta: meta,
+            content: encNoteContent,
+          })
+          unlockNoteSession(noteId, dek, meta)
+          try {
+            await fetchFolderTree()
+          } catch (err) {
+            console.warn('[NoteLock] tree refresh failed', err)
+          }
+          toast.success(t('notes.locked'))
+        }}
       />
       <ImportDialog
         isOpen={showImportDialog}

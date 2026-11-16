@@ -18,6 +18,7 @@ export interface FolderNote {
   folderId: string | null
   tagIds: string[]
   position: number
+  isEncrypted?: boolean
 }
 
 // Unified sidebar item type for drag & drop

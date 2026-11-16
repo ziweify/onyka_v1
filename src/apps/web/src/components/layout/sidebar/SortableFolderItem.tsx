@@ -48,6 +48,7 @@ interface SortableFolderItemProps {
   onSelectFolder: (folderId: string, event?: React.MouseEvent) => void
   onDeleteNote: (noteId: string, noteName: string) => void
   onRenameNote: (noteId: string, newTitle: string) => void
+  onLockNote?: (noteId: string, noteTitle: string) => void
   onDeleteFolder: (folderId: string, folderName: string) => void
   onRenameFolder: (folderId: string, newName: string) => void
   onChangeFolderIcon: (folderId: string, icon: string) => void
@@ -77,6 +78,7 @@ export function SortableFolderItem({
   onSelectFolder,
   onDeleteNote,
   onRenameNote,
+  onLockNote,
   onDeleteFolder,
   onRenameFolder,
   onChangeFolderIcon,
@@ -638,6 +640,7 @@ export function SortableFolderItem({
                     onSelectFolder={onSelectFolder}
                     onDeleteNote={onDeleteNote}
                     onRenameNote={onRenameNote}
+                    onLockNote={onLockNote}
                     onDeleteFolder={onDeleteFolder}
                     onRenameFolder={onRenameFolder}
                     onChangeFolderIcon={onChangeFolderIcon}
@@ -665,6 +668,11 @@ export function SortableFolderItem({
                     onSelect={(e) => onSelectNote(note.id, e, note.title)}
                     onDelete={() => onDeleteNote(note.id, note.title)}
                     onRename={(newTitle) => onRenameNote(note.id, newTitle)}
+                    onLock={
+                      onLockNote && !note.isEncrypted
+                        ? () => onLockNote(note.id, note.title)
+                        : undefined
+                    }
                     isNew={note.id === newNoteId}
                     isRemoving={removingNoteIds?.has(note.id)}
                     isMobile={isMobile}

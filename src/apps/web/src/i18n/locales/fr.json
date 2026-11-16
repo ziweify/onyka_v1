@@ -231,7 +231,29 @@
     "delete_confirm": "Supprimer",
     "rename": "Renommer",
     "change_icon": "Changer l'icône",
-    "search_icons": "Rechercher..."
+    "search_icons": "Rechercher...",
+    "locked": "Verrouillé"
+  },
+  "encryption": {
+    "enable_title": "Verrouiller cette note",
+    "enable_desc": "La phrase secrète sert uniquement sur cet appareil pour chiffrer et déchiffrer. Elle n'est jamais envoyée au serveur. Si vous l'oubliez, le contenu ne pourra pas être récupéré. Fermer le navigateur, se déconnecter ou l'inactivité efface la clé de la mémoire.",
+    "unlock_title": "Déverrouiller la note",
+    "unlock_desc": "Saisissez la phrase secrète pour déchiffrer localement. Le serveur ne l'a jamais stockée.",
+    "password_label": "Phrase secrète",
+    "password_placeholder": "Au moins 8 caractères",
+    "confirm_label": "Confirmer",
+    "confirm_placeholder": "Saisir à nouveau",
+    "password_too_short": "Utilisez au moins 8 caractères",
+    "password_mismatch": "Les phrases secrètes ne correspondent pas",
+    "enable_confirm": "Verrouiller",
+    "unlock_confirm": "Déverrouiller",
+    "enable_failed": "Impossible de verrouiller la note",
+    "unlock_failed": "Phrase secrète incorrecte ou données corrompues",
+    "insecure_context": "Le chiffrement nécessite un contexte sécurisé (HTTPS ou localhost).",
+    "locked_placeholder": "Cette note est verrouillée. Déverrouillez pour modifier.",
+    "lock_session": "Verrouiller maintenant (effacer la clé)",
+    "show_password": "Afficher la phrase secrète",
+    "hide_password": "Masquer la phrase secrète"
   },
   "folders": {
     "delete_title": "Supprimer le dossier ?",

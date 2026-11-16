@@ -231,7 +231,31 @@
     "delete_confirm": "Delete",
     "rename": "Rename",
     "change_icon": "Change icon",
-    "search_icons": "Search icons..."
+    "search_icons": "Search icons...",
+    "lock": "Lock",
+    "unlock_session": "Lock session",
+    "locked": "Locked"
+  },
+  "encryption": {
+    "enable_title": "Lock this note",
+    "enable_desc": "Your passphrase is used only on this device to encrypt and decrypt. It is never sent to the server. If you forget it, the content cannot be recovered. Closing the browser, logging out, or idle timeout clears the key from memory.",
+    "unlock_title": "Unlock note",
+    "unlock_desc": "Enter the lock passphrase to decrypt locally. The server never stored this passphrase.",
+    "password_label": "Passphrase",
+    "password_placeholder": "At least 8 characters",
+    "confirm_label": "Confirm passphrase",
+    "confirm_placeholder": "Enter again",
+    "password_too_short": "Use at least 8 characters",
+    "password_mismatch": "Passphrases do not match",
+    "enable_confirm": "Lock",
+    "unlock_confirm": "Unlock",
+    "enable_failed": "Could not lock the note",
+    "unlock_failed": "Wrong passphrase or corrupted data",
+    "insecure_context": "Encryption requires a secure context (HTTPS or localhost).",
+    "locked_placeholder": "This note is locked. Unlock to edit.",
+    "lock_session": "Lock now (clear key)",
+    "show_password": "Show passphrase",
+    "hide_password": "Hide passphrase"
   },
   "folders": {
     "delete_title": "Delete folder?",

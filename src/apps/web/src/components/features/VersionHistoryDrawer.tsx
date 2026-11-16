@@ -13,6 +13,8 @@ import { pagesApi } from '@/services/api'
 import { useFocusTrap } from '@/hooks/useFocusTrap'
 import { formatRelativeTime } from '@/utils/format'
 import { buildTextDiff, type DiffLine } from '@/utils/textDiff'
+import { openNoteContent } from '@/utils/noteCryptoSession'
+import { onEncryptionWipe } from '@/stores/noteEncryption'
 interface VersionHistoryDrawerProps {
   isOpen: boolean
   onClose: () => void
@@ -87,6 +89,14 @@ export function VersionHistoryDrawer({
   const [restoring, setRestoring] = useState(false)
   const [creating, setCreating] = useState(false)
 
+  useEffect(() => {
+    return onEncryptionWipe(() => {
+      setDetail(null)
+      setCompareDetail(null)
+      onClose()
+    })
+  }, [onClose])
+
   const loadList = useCallback(async (targetPageId: string) => {
     setLoading(true)
     try {
@@ -145,7 +155,8 @@ export function VersionHistoryDrawer({
     ;(async () => {
       try {
         const { version } = await pagesApi.getVersion(selectedId)
-        if (!cancelled) setDetail(version)
+        const content = await openNoteContent(noteId, version.content, false)
+        if (!cancelled) setDetail({ ...version, content })
       } catch {
         if (!cancelled) setDetail(null)
       }
@@ -153,7 +164,7 @@ export function VersionHistoryDrawer({
     return () => {
       cancelled = true
     }
-  }, [isOpen, selectedId])
+  }, [isOpen, selectedId, noteId])
 
   useEffect(() => {
     if (!isOpen || !compareId || panelMode !== 'diff') {
@@ -164,7 +175,8 @@ export function VersionHistoryDrawer({
     ;(async () => {
       try {
         const { version } = await pagesApi.getVersion(compareId)
-        if (!cancelled) setCompareDetail(version)
+        const content = await openNoteContent(noteId, version.content, false)
+        if (!cancelled) setCompareDetail({ ...version, content })
       } catch {
         if (!cancelled) setCompareDetail(null)
       }
@@ -172,7 +184,7 @@ export function VersionHistoryDrawer({
     return () => {
       cancelled = true
     }
-  }, [isOpen, compareId, panelMode])
+  }, [isOpen, compareId, panelMode, noteId])
 
   const diffLines = useMemo(() => {
     if (panelMode !== 'diff' || !detail) return []

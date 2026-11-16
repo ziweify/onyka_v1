@@ -118,6 +118,8 @@ export class NoteRepository {
       ownerId,
       isDeleted: false,
       deletedAt: null,
+      isEncrypted: false,
+      encryptionMeta: null,
       createdAt: now,
       updatedAt: now,
     }
@@ -132,6 +134,11 @@ export class NoteRepository {
     if (input.icon !== undefined) updateData.icon = input.icon
     if (input.isQuickNote !== undefined) updateData.isQuickNote = input.isQuickNote
     if (input.folderId !== undefined) updateData.folderId = input.folderId
+    if (input.isEncrypted !== undefined) updateData.isEncrypted = input.isEncrypted
+    if (input.encryptionMeta !== undefined) {
+      updateData.encryptionMeta =
+        input.encryptionMeta == null ? null : JSON.stringify(input.encryptionMeta)
+    }
     await db.update(notes).set(updateData).where(eq(notes.id, id))
     return this.findById(id)
   }
@@ -371,6 +378,14 @@ export class NoteRepository {
       logger.error('Failed to decrypt note content', err, { noteId: row.id })
       content = ''
     }
+    let encryptionMeta = null as import('@onyka/shared').NoteEncryptionMeta | null
+    if (row.encryptionMeta) {
+      try {
+        encryptionMeta = JSON.parse(row.encryptionMeta) as import('@onyka/shared').NoteEncryptionMeta
+      } catch {
+        encryptionMeta = null
+      }
+    }
     return {
       id: row.id,
       title,
@@ -381,6 +396,8 @@ export class NoteRepository {
       ownerId: row.ownerId,
       isDeleted: row.isDeleted,
       deletedAt: row.deletedAt,
+      isEncrypted: row.isEncrypted ?? false,
+      encryptionMeta,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }

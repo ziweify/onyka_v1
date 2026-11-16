@@ -78,6 +78,12 @@ function AuthCheck({ children }: { children: React.ReactNode }) {
 }
 
 export function App() {
+  useEffect(() => {
+    void import('@/stores/noteEncryption').then(({ bindEncryptionSessionGuards }) => {
+      bindEncryptionSessionGuards()
+    })
+  }, [])
+
   return (
     <ErrorBoundary>
       <BrowserRouter>

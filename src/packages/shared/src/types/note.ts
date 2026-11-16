@@ -1,3 +1,14 @@
+/** Opaque client-side encryption envelope (passphrase never included). */
+export interface NoteEncryptionMeta {
+  v: 1
+  kdf: 'PBKDF2'
+  hash: 'SHA-256'
+  iterations: number
+  salt: string
+  wrapIv: string
+  wrappedDek: string
+}
+
 export interface Note {
   id: string
   title: string
@@ -8,6 +19,9 @@ export interface Note {
   ownerId: string
   isDeleted: boolean
   deletedAt: Date | null
+  /** When true, content/pages are client-encrypted ciphertext. */
+  isEncrypted: boolean
+  encryptionMeta: NoteEncryptionMeta | null
   createdAt: Date
   updatedAt: Date
 }
@@ -30,6 +44,8 @@ export interface NoteUpdateInput {
   icon?: string
   isQuickNote?: boolean
   folderId?: string | null
+  isEncrypted?: boolean
+  encryptionMeta?: NoteEncryptionMeta | null
 }
 
 export interface Tag {

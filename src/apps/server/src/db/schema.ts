@@ -80,6 +80,9 @@ export const notes = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
     deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+    /** Client-side E2E lock; server only stores ciphertext + opaque meta (no passphrase). */
+    isEncrypted: integer('is_encrypted', { mode: 'boolean' }).notNull().default(false),
+    encryptionMeta: text('encryption_meta'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },

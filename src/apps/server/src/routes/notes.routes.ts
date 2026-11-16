@@ -30,12 +30,24 @@ const createNoteSchema = z.object({
   folderId: z.string().nullable().optional(),
 })
 
+const encryptionMetaSchema = z.object({
+  v: z.literal(1),
+  kdf: z.literal('PBKDF2'),
+  hash: z.literal('SHA-256'),
+  iterations: z.number().int().min(100_000).max(5_000_000),
+  salt: z.string().min(1).max(128),
+  wrapIv: z.string().min(1).max(128),
+  wrappedDek: z.string().min(1).max(512),
+})
+
 const updateNoteSchema = z.object({
   title: z.string().max(500).optional(),
   content: z.string().max(MAX_CONTENT_LENGTH).optional(),
   icon: z.string().max(50).optional(),
   isQuickNote: z.boolean().optional(),
   folderId: z.string().nullable().optional(),
+  isEncrypted: z.boolean().optional(),
+  encryptionMeta: encryptionMetaSchema.nullable().optional(),
 })
 
 const listNotesSchema = z.object({

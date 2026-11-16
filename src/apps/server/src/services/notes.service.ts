@@ -78,8 +78,18 @@ export class NotesService {
       throw new NotesServiceError('Access denied', 'ACCESS_DENIED', 403)
     }
 
+    const willBeEncrypted = input.isEncrypted ?? note.isEncrypted
+    const looksEncrypted =
+      typeof input.content === 'string' && input.content.startsWith('ONYKAENC1.')
+
     // Track words written for stats if tracking is enabled (fire and forget)
-    if (input.content !== undefined && input.content !== note.content) {
+    // Skip for client-encrypted payloads (ciphertext is not prose).
+    if (
+      input.content !== undefined &&
+      input.content !== note.content &&
+      !willBeEncrypted &&
+      !looksEncrypted
+    ) {
       const newContent = input.content
       const noteOwnerId = note.ownerId
       void (async () => {
@@ -99,7 +109,7 @@ export class NotesService {
       throw new NotesServiceError('Failed to update note', 'UPDATE_FAILED', 500)
     }
 
-    if (input.content !== undefined) {
+    if (input.content !== undefined && !updated.isEncrypted && !looksEncrypted) {
       await noteUploadRepository.syncFromNoteContent(noteId, updated.content)
       await noteAttachmentRepository.syncFromNoteContent(noteId, updated.content)
     }

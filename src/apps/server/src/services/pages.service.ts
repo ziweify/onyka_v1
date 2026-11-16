@@ -73,8 +73,18 @@ export class PagesService {
       throw new PagesServiceError('Page is locked', 'PAGE_LOCKED', 423)
     }
 
+    const looksEncrypted =
+      typeof input.content === 'string' && input.content.startsWith('ONYKAENC1.')
+    const noteEncrypted = Boolean(note?.isEncrypted)
+
     // Track words written for stats if tracking is enabled (fire and forget)
-    if (input.content !== undefined && input.content !== page.content && note) {
+    if (
+      input.content !== undefined &&
+      input.content !== page.content &&
+      note &&
+      !noteEncrypted &&
+      !looksEncrypted
+    ) {
       const newContent = input.content
       const noteOwnerId = note.ownerId
       const oldContent = page.content
@@ -95,7 +105,7 @@ export class PagesService {
       throw new PagesServiceError('Failed to update page', 'UPDATE_FAILED', 500)
     }
 
-    if (input.content !== undefined) {
+    if (input.content !== undefined && !noteEncrypted && !looksEncrypted) {
       await noteUploadRepository.syncFromPage(updated.noteId)
       await noteAttachmentRepository.syncFromPage(updated.noteId)
     }
@@ -154,7 +164,7 @@ export class PagesService {
     noteId: string,
     userId: string,
     requiredPermission: 'read' | 'edit'
-  ): Promise<{ ownerId: string }> {
+  ): Promise<{ ownerId: string; isEncrypted: boolean }> {
     const note = await noteRepository.findById(noteId)
 
     if (!note) {
@@ -163,7 +173,7 @@ export class PagesService {
 
     // Owner has full access
     if (note.ownerId === userId) {
-      return { ownerId: note.ownerId }
+      return { ownerId: note.ownerId, isEncrypted: note.isEncrypted }
     }
 
     // Check shared access
@@ -172,7 +182,7 @@ export class PagesService {
       throw new PagesServiceError('Access denied', 'ACCESS_DENIED', 403)
     }
 
-    return { ownerId: note.ownerId }
+    return { ownerId: note.ownerId, isEncrypted: note.isEncrypted }
   }
 }
 

@@ -46,8 +46,8 @@ export class FolderRepository {
         title: notes.title,
         icon: notes.icon,
         folderId: notes.folderId,
-
         position: notes.position,
+        isEncrypted: notes.isEncrypted,
       })
       .from(notes)
       .where(and(eq(notes.ownerId, ownerId), eq(notes.isDeleted, false), eq(notes.isQuickNote, false)))
@@ -86,8 +86,8 @@ export class FolderRepository {
         icon: note.icon,
         folderId: note.folderId,
         tagIds: tagsByNote.get(note.id) ?? [],
-
         position: note.position,
+        isEncrypted: Boolean(note.isEncrypted),
       })
     }
 
@@ -130,8 +130,8 @@ export class FolderRepository {
         title: notes.title,
         icon: notes.icon,
         folderId: notes.folderId,
-
         position: notes.position,
+        isEncrypted: notes.isEncrypted,
       })
       .from(notes)
       .where(and(eq(notes.ownerId, ownerId), eq(notes.isDeleted, false), eq(notes.isQuickNote, false), isNull(notes.folderId)))
@@ -167,6 +167,7 @@ export class FolderRepository {
       folderId: note.folderId,
       tagIds: tagsByNote.get(note.id) ?? [],
       position: note.position,
+      isEncrypted: Boolean(note.isEncrypted),
     }))
   }
 

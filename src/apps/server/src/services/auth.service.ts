@@ -255,6 +255,18 @@ export class AuthService {
     await tokenService.revokeAllUserTokens(userId)
   }
 
+  /** Verify the current user's password (for sensitive actions like kicking sessions). */
+  async verifyPassword(userId: string, password: string): Promise<void> {
+    const userWithPassword = await userRepository.findByIdWithPassword(userId)
+    if (!userWithPassword) {
+      throw new AuthError('User not found', 'USER_NOT_FOUND', 404)
+    }
+    const isValid = await passwordService.verify(userWithPassword.passwordHash, password)
+    if (!isValid) {
+      throw new AuthError('Incorrect password', 'INVALID_PASSWORD', 400)
+    }
+  }
+
   async refreshTokens(refreshToken: string, metadata?: SessionMetadata): Promise<TokenPair> {
     const payload = await tokenService.verifyRefreshToken(refreshToken)
     if (!payload) {

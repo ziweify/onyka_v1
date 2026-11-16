@@ -16,13 +16,15 @@ import {
   IoShieldOutline,
   IoDocumentTextOutline,
   IoCloudUploadOutline,
+  IoPhonePortraitOutline,
 } from 'react-icons/io5'
 import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, pointerWithin, useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { ThemeToggle, AccentColorPicker, SparkIcon } from '@/components/ui'
-import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog } from '@/components/features'
+import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog, SessionsDialog } from '@/components/features'
+import { sessionsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { useFoldersStore } from '@/stores/folders'
 import { useTagsStore } from '@/stores/tags'
@@ -228,6 +230,8 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const [showSettings, setShowSettings] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showSessions, setShowSessions] = useState(false)
+  const [sessionCount, setSessionCount] = useState<number | null>(null)
 
   const [deleteDialog, setDeleteDialog] = useState<{
     type: 'note' | 'folder' | 'mixed'
@@ -338,6 +342,17 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
     fetchStats()
     fetchMyShares()
   }, [fetchFolderTree, fetchTags, fetchStats, fetchMyShares])
+
+  const refreshSessionCount = useCallback(() => {
+    sessionsApi
+      .list()
+      .then((res) => setSessionCount(res.count ?? res.sessions.length))
+      .catch(() => setSessionCount(null))
+  }, [])
+
+  useEffect(() => {
+    refreshSessionCount()
+  }, [refreshSessionCount])
 
   useEffect(() => {
     if (showNewNoteInput) {
@@ -1302,9 +1317,31 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
         </div>
       )}
 
-      <div className="p-3 border-t border-[var(--color-border-subtle)]">
+      <div className="p-3 border-t border-[var(--color-border-subtle)] space-y-2">
+        <button
+          type="button"
+          onClick={() => setShowSessions(true)}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left bg-[var(--color-bg-tertiary)]/60 hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          title={t('sessions.title')}
+        >
+          <IoPhonePortraitOutline className="w-4 h-4 flex-shrink-0 text-[var(--color-accent)]" />
+          <span className="text-xs text-[var(--color-text-secondary)] truncate flex-1">
+            {sessionCount == null
+              ? t('sessions.title')
+              : sessionCount === 1
+                ? t('sessions.sidebar_count_one')
+                : t('sessions.sidebar_count', { count: sessionCount })}
+          </span>
+          {sessionCount != null && sessionCount > 1 && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--color-accent)]/15 text-[var(--color-accent)]">
+              {sessionCount}
+            </span>
+          )}
+        </button>
+
         <div className="flex items-center justify-between gap-2">
           <button
+            type="button"
             onClick={() => setShowProfile(true)}
             className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[var(--color-bg-tertiary)] transition-all duration-200 ease-out group min-w-0 shrink"
             title={t('profile.edit')}
@@ -1535,6 +1572,32 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
 
             <div
               className={`
+                relative group/sessions
+                transition-all duration-300
+                ${sidebarCollapsed ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
+              `}
+              style={{ transitionDelay: sidebarCollapsed ? '525ms' : '0ms' }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowSessions(true)}
+                className="collapsed-icon-btn relative p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)] transition-colors duration-200"
+                aria-label={t('sessions.title')}
+              >
+                <IoPhonePortraitOutline className="w-5 h-5" />
+                {sessionCount != null && sessionCount > 1 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-[var(--color-accent)] text-white text-[9px] font-bold leading-3.5 flex items-center justify-center">
+                    {sessionCount}
+                  </span>
+                )}
+              </button>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] shadow-lg text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap opacity-0 scale-95 pointer-events-none group-hover/sessions:opacity-100 group-hover/sessions:scale-100 transition-all duration-200 delay-150">
+                {t('sessions.title')}
+              </div>
+            </div>
+
+            <div
+              className={`
                 relative group/settings
                 transition-all duration-300
                 ${sidebarCollapsed ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
@@ -1678,6 +1741,14 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
       />
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       <ProfileEditModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
+      <SessionsDialog
+        isOpen={showSessions}
+        onClose={() => {
+          setShowSessions(false)
+          refreshSessionCount()
+        }}
+        onSessionsChanged={refreshSessionCount}
+      />
       <ImportDialog
         isOpen={showImportDialog}
         onClose={() => setShowImportDialog(false)}

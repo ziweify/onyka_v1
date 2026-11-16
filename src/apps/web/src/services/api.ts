@@ -291,23 +291,26 @@ export interface Session {
   userAgent: string | null
   ipAddress: string | null
   createdAt: Date | string
+  expiresAt: Date | string
   isCurrent: boolean
 }
 
 export const sessionsApi = {
-  list: async (): Promise<{ sessions: Session[] }> => {
-    return request<{ sessions: Session[] }>('/auth/sessions')
+  list: async (): Promise<{ sessions: Session[]; count: number }> => {
+    return request<{ sessions: Session[]; count: number }>('/auth/sessions')
   },
 
-  revoke: async (sessionId: string): Promise<{ success: boolean }> => {
+  revoke: async (sessionId: string, password: string): Promise<{ success: boolean }> => {
     return request<{ success: boolean }>(`/auth/sessions/${sessionId}`, {
       method: 'DELETE',
+      body: JSON.stringify({ password }),
     })
   },
 
-  revokeAllOthers: async (): Promise<{ success: boolean }> => {
+  revokeAllOthers: async (password: string): Promise<{ success: boolean }> => {
     return request<{ success: boolean }>('/auth/sessions', {
       method: 'DELETE',
+      body: JSON.stringify({ password }),
     })
   },
 }

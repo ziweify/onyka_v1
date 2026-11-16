@@ -849,22 +849,30 @@ router.get('/sessions', authenticate, async (req, res, next) => {
       userAgent: s.userAgent,
       ipAddress: s.ipAddress,
       createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
       isCurrent: s.id === currentSessionId,
     }))
 
-    res.json({ sessions: result })
+    res.json({ sessions: result, count: result.length })
   } catch (error) {
     next(error)
   }
 })
 
+const revokeSessionSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+})
+
 /**
  * DELETE /api/auth/sessions/:id
- * Revoke a specific session.
+ * Revoke a specific session. Requires password confirmation.
  */
 router.delete('/sessions/:id', authenticate, async (req, res, next) => {
   try {
     const sessionId = req.params.id
+    const { password } = revokeSessionSchema.parse(req.body)
+    await authService.verifyPassword(req.userId!, password)
+
     const revoked = await tokenService.revokeSession(sessionId, req.userId!)
 
     if (!revoked) {
@@ -882,10 +890,13 @@ router.delete('/sessions/:id', authenticate, async (req, res, next) => {
 
 /**
  * DELETE /api/auth/sessions
- * Revoke all other sessions (keep current).
+ * Revoke all other sessions (keep current). Requires password confirmation.
  */
 router.delete('/sessions', authenticate, async (req, res, next) => {
   try {
+    const { password } = revokeSessionSchema.parse(req.body)
+    await authService.verifyPassword(req.userId!, password)
+
     const currentRefreshToken = req.cookies?.refresh_token
     if (!currentRefreshToken) {
       // No cookie = can't identify current session, revoke all

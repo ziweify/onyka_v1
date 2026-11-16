@@ -15,7 +15,6 @@ import {
   IoPricetagOutline,
   IoShieldOutline,
   IoDocumentTextOutline,
-  IoCloudUploadOutline,
   IoPhonePortraitOutline,
 } from 'react-icons/io5'
 import { Link } from 'react-router-dom'
@@ -852,50 +851,42 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
       </div>
 
       <div className="px-3 pb-3">
-        <div className="flex gap-2">
+        <div className="sidebar-action-bar" role="toolbar" aria-label={t('sidebar.file_tree')}>
           <button
-            onClick={() => setShowNewFolderInput(true)}
-            className="h-[36px] w-[36px] flex-shrink-0 flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] border floating-panel-interactive"
-            title={t('sidebar.new_folder')}
+            type="button"
+            onClick={handleShowNewNoteInput}
+            className="sidebar-action-btn sidebar-action-btn--primary"
+            title={t('sidebar.new_note_btn')}
           >
-            <IoFolderOpenOutline className="w-4 h-4" />
+            {t('sidebar.new_note_btn')}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { openDrawer(); closeMobileSidebar() }}
+            className="sidebar-action-btn"
+            title={t('sidebar.sparks_btn')}
+          >
+            {t('sidebar.sparks_btn')}
           </button>
 
           <button
             type="button"
             onClick={() => setShowImportDialog(true)}
-            className="h-[36px] w-[36px] flex-shrink-0 flex items-center justify-center rounded-lg text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] border floating-panel-interactive"
+            className="sidebar-action-btn"
             title={t('import.title')}
           >
-            <IoCloudUploadOutline className="w-4 h-4" />
+            {t('sidebar.upload')}
           </button>
 
-          <button onClick={handleShowNewNoteInput} className="fold-button group flex-1">
-            <span className="fold-corner" />
-            <span className="fold-button-inner">
-              <IoAddOutline className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
-              <span>{t('sidebar.new_note_btn')}</span>
-            </span>
+          <button
+            type="button"
+            onClick={() => setShowNewFolderInput(true)}
+            className="sidebar-action-btn"
+            title={t('sidebar.new_folder')}
+          >
+            {t('sidebar.folder')}
           </button>
-
-          <div className="spark-button group flex-1">
-            <span className="spark-button-bg" />
-            <span className="spark-button-inner spark-button-split">
-              <button
-                onClick={() => { openQuickAdd(); closeMobileSidebar() }}
-                className="spark-split-capture"
-              >
-                <SparkIcon className="w-[18px] h-[18px] text-[var(--color-accent)]" />
-              </button>
-              <span className="w-px self-stretch my-[6px] bg-[var(--color-border)]" />
-              <button
-                onClick={() => { openDrawer(); closeMobileSidebar() }}
-                className="spark-split-library"
-              >
-                {t('sidebar.sparks_btn')}
-              </button>
-            </span>
-          </div>
         </div>
       </div>
 

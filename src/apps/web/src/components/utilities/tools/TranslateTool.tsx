@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { IoSwapHorizontalOutline } from 'react-icons/io5'
 import {
   detectBrowserTranslatorSupport,
   resolveLangs,
@@ -8,7 +7,7 @@ import {
   type TranslateDirection,
   type TranslatePair,
 } from '../translateUtils'
-import { CopyButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
 
 const PAIRS: TranslatePair[] = ['zh-en', 'zh-ja', 'zh-ko']
 
@@ -64,13 +63,6 @@ export function TranslateTool() {
     }
   }
 
-  const swap = () => {
-    setDirection((d) => (d === 'from-zh' ? 'to-zh' : 'from-zh'))
-    setInput(output)
-    setOutput(input)
-    setError(null)
-  }
-
   return (
     <div className="h-full flex flex-col gap-2 min-h-0">
       <ToolActions>
@@ -79,12 +71,19 @@ export function TranslateTool() {
             {t(`utilities.translate_pair_${id.replace('-', '_')}`)}
           </ToolButton>
         ))}
-        <ToolButton onClick={swap} disabled={busy}>
-          <span className="inline-flex items-center gap-1">
-            <IoSwapHorizontalOutline className="w-3.5 h-3.5" />
-            {langs.sourceLabel} → {langs.targetLabel}
-          </span>
-        </ToolButton>
+        <SwapIOButton
+          input={input}
+          output={output}
+          disabled={busy}
+          label={`${langs.sourceLabel} ↔ ${langs.targetLabel}`}
+          onSwap={(nextIn, nextOut) => {
+            setDirection((d) => (d === 'from-zh' ? 'to-zh' : 'from-zh'))
+            setInput(nextIn)
+            setOutput(nextOut)
+            setError(null)
+            setEngineHint('')
+          }}
+        />
         <ToolButton primary disabled={busy || !input.trim()} onClick={() => void run()}>
           {busy ? t('common.loading') : t('utilities.translate_run')}
         </ToolButton>

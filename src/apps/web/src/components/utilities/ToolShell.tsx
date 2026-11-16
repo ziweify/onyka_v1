@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
-import { IoCopyOutline } from 'react-icons/io5'
+import { IoCopyOutline, IoSwapHorizontalOutline } from 'react-icons/io5'
 import { copyText } from './codecUtils'
 import { useState } from 'react'
 
@@ -86,6 +86,34 @@ export function CopyButton({ text }: { text: string }) {
       <span className="inline-flex items-center gap-1">
         <IoCopyOutline className="w-3 h-3" />
         {ok ? t('utilities.copied') : t('utilities.copy')}
+      </span>
+    </ToolButton>
+  )
+}
+
+/** Swap input ↔ output text for round-trip testing. */
+export function SwapIOButton({
+  input,
+  output,
+  onSwap,
+  disabled,
+  label,
+}: {
+  input: string
+  output: string
+  onSwap: (nextInput: string, nextOutput: string) => void
+  disabled?: boolean
+  label?: string
+}) {
+  const { t } = useTranslation()
+  return (
+    <ToolButton
+      disabled={disabled || (!input && !output)}
+      onClick={() => onSwap(output, input)}
+    >
+      <span className="inline-flex items-center gap-1">
+        <IoSwapHorizontalOutline className="w-3.5 h-3.5" />
+        {label || t('utilities.swap_io')}
       </span>
     </ToolButton>
   )

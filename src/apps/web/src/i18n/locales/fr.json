@@ -326,6 +326,7 @@
     "output": "Sortie",
     "copy": "Copier",
     "copied": "Copié",
+    "swap_io": "Échanger",
     "encode": "Encoder",
     "decode": "Décoder",
     "encrypt": "Chiffrer",

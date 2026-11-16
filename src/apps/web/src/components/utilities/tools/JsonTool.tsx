@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CopyButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
 
 export function JsonTool() {
   const { t } = useTranslation()
@@ -29,6 +29,15 @@ export function JsonTool() {
         <ToolButton primary onClick={() => run('format')}>{t('utilities.json_format')}</ToolButton>
         <ToolButton onClick={() => run('minify')}>{t('utilities.json_minify')}</ToolButton>
         <ToolButton onClick={() => run('validate')}>{t('utilities.json_validate')}</ToolButton>
+        <SwapIOButton
+          input={input}
+          output={output}
+          onSwap={(nextIn, nextOut) => {
+            setInput(nextIn)
+            setOutput(nextOut)
+            setError(null)
+          }}
+        />
         <CopyButton text={output} />
       </ToolActions>
       <ToolError message={error} />

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { aesGcmDecrypt, aesGcmEncrypt, shaDigest } from '../codecUtils'
 import { md5 } from '../md5'
-import { CopyButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
 
 type HashAlgo = 'md5' | 'sha1' | 'sha256' | 'sha512'
 
@@ -60,6 +60,15 @@ export function CryptoTool() {
             <ToolButton onClick={() => void runAes('dec')}>{t('utilities.decrypt')}</ToolButton>
           </>
         )}
+        <SwapIOButton
+          input={input}
+          output={output}
+          onSwap={(nextIn, nextOut) => {
+            setInput(nextIn)
+            setOutput(nextOut)
+            setError(null)
+          }}
+        />
         <CopyButton text={output} />
       </ToolActions>
       {tab === 'aes' && (

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { base64ToUtf8, utf8ToBase64 } from '../codecUtils'
-import { CopyButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
 
 type Mode = 'url' | 'base64'
 
@@ -37,6 +37,15 @@ export function StringCodecTool() {
         <ToolButton primary={mode === 'url'} onClick={() => setMode('url')}>URL</ToolButton>
         <ToolButton primary onClick={encode}>{t('utilities.encode')}</ToolButton>
         <ToolButton onClick={decode}>{t('utilities.decode')}</ToolButton>
+        <SwapIOButton
+          input={input}
+          output={output}
+          onSwap={(nextIn, nextOut) => {
+            setInput(nextIn)
+            setOutput(nextOut)
+            setError(null)
+          }}
+        />
         <CopyButton text={output} />
       </ToolActions>
       <ToolError message={error} />

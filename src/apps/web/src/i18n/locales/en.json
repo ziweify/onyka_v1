@@ -326,6 +326,7 @@
     "output": "Output",
     "copy": "Copy",
     "copied": "Copied",
+    "swap_io": "Swap",
     "encode": "Encode",
     "decode": "Decode",
     "encrypt": "Encrypt",

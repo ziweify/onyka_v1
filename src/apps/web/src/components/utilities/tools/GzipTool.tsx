@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { gzipCompressToBase64, gzipDecompressFromBase64 } from '../codecUtils'
-import { CopyButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
+import { CopyButton, SwapIOButton, ToolActions, ToolButton, ToolError, ToolField } from '../ToolShell'
 
 export function GzipTool() {
   const { t } = useTranslation()
@@ -43,6 +43,16 @@ export function GzipTool() {
         <ToolButton disabled={busy} onClick={() => void decompress()}>
           {t('utilities.gzip_decompress')}
         </ToolButton>
+        <SwapIOButton
+          input={input}
+          output={output}
+          disabled={busy}
+          onSwap={(nextIn, nextOut) => {
+            setInput(nextIn)
+            setOutput(nextOut)
+            setError(null)
+          }}
+        />
         <CopyButton text={output} />
       </ToolActions>
       <p className="text-[10px] text-[var(--color-text-tertiary)]">{t('utilities.gzip_hint')}</p>

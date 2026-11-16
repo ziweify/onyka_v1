@@ -7,6 +7,7 @@ export type UtilityToolId =
   | 'crypto'
   | 'color'
   | 'password'
+  | 'translate'
 
 const STORAGE_KEY = 'onyka-utility-dock'
 

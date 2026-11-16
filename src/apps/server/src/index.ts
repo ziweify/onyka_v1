@@ -30,7 +30,7 @@ app.use(helmet({
       scriptSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'", 'ws:', 'wss:'],
+      connectSrc: ["'self'", 'ws:', 'wss:', 'https://api.mymemory.translated.net'],
       fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
       frameSrc: ["'self'", 'blob:'],

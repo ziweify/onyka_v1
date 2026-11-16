@@ -9,6 +9,7 @@ import {
   IoLinkOutline,
   IoLockClosedOutline,
   IoConstructOutline,
+  IoLanguageOutline,
 } from 'react-icons/io5'
 import { useUtilityDockStore, type UtilityToolId } from '@/stores/utilityDock'
 import { JsonTool } from './tools/JsonTool'
@@ -17,6 +18,7 @@ import { GzipTool } from './tools/GzipTool'
 import { CryptoTool } from './tools/CryptoTool'
 import { PasswordTool } from './tools/PasswordTool'
 import { ColorTool } from './tools/ColorTool'
+import { TranslateTool } from './tools/TranslateTool'
 
 const TOOLS: { id: UtilityToolId; icon: typeof IoCodeSlashOutline; labelKey: string }[] = [
   { id: 'json', icon: IoCodeSlashOutline, labelKey: 'utilities.tool_json' },
@@ -25,6 +27,7 @@ const TOOLS: { id: UtilityToolId; icon: typeof IoCodeSlashOutline; labelKey: str
   { id: 'crypto', icon: IoLockClosedOutline, labelKey: 'utilities.tool_crypto' },
   { id: 'password', icon: IoKeyOutline, labelKey: 'utilities.tool_password' },
   { id: 'color', icon: IoColorPaletteOutline, labelKey: 'utilities.tool_color' },
+  { id: 'translate', icon: IoLanguageOutline, labelKey: 'utilities.tool_translate' },
 ]
 
 function ToolBody({ tool }: { tool: UtilityToolId }) {
@@ -41,6 +44,8 @@ function ToolBody({ tool }: { tool: UtilityToolId }) {
       return <PasswordTool />
     case 'color':
       return <ColorTool />
+    case 'translate':
+      return <TranslateTool />
     default:
       return null
   }

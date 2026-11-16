@@ -7,6 +7,8 @@ export interface UserPreferences {
   lightThemeBase: string
   accentColor: string
   avatarColor: string
+  /** When true, new folders get a color from local name semantics. */
+  autoFolderColors: boolean
   editorFontSize: string
   editorFontFamily: string
   sidebarCollapsed: boolean
@@ -36,6 +38,7 @@ export interface User {
   darkThemeBase: string
   lightThemeBase: string
   accentColor: string
+  autoFolderColors: boolean
   editorFontSize: string
   editorFontFamily: string
   sidebarCollapsed: boolean

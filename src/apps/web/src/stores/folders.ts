@@ -180,7 +180,15 @@ export const useFoldersStore = create<FoldersState>((set, get) => ({
   createFolder: async (name, parentId = null) => {
     set({ isLoading: true, error: null })
     try {
-      const { folder } = await foldersApi.create({ name, parentId })
+      const { useThemeStore } = await import('./theme')
+      const { suggestFolderColor } = await import('@/utils/suggestFolderColor')
+      const auto = useThemeStore.getState().autoFolderColors
+      const color = auto ? suggestFolderColor(name) : undefined
+      const { folder } = await foldersApi.create({
+        name,
+        parentId,
+        ...(color ? { color } : {}),
+      })
       set((state) => ({
         folders: [...state.folders, folder],
         isLoading: false,

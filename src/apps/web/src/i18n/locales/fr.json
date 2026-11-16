@@ -415,6 +415,8 @@
     "theme_dark": "Sombre",
     "mode": "Mode",
     "accent_color": "Couleur d'accent",
+    "auto_folder_colors": "Couleurs sémantiques des dossiers",
+    "auto_folder_colors_desc": "Colorer automatiquement les nouveaux dossiers selon leur nom ; désactivez pour un rendu épuré.",
     "language": "Langue",
     "languages": {
       "fr": "Français",
@@ -702,6 +704,9 @@
   },
   "theme": {
     "color_picker_title": "Couleur du thème",
+    "style_picker_title": "Style du thème",
+    "auto_folder_colors": "Couleurs sémantiques des dossiers",
+    "auto_folder_colors_desc": "Colorer automatiquement les nouveaux dossiers selon leur nom ; désactivez pour un rendu épuré.",
     "selected": "Sélectionné",
     "colors": {
       "blue": "Bleu",

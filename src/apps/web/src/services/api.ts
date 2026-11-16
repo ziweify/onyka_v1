@@ -407,13 +407,13 @@ export const foldersApi = {
 
   tree: () => request<{ tree: FolderTreeItem[]; rootNotes: FolderNote[] }>('/folders/tree'),
 
-  create: (data: { name: string; parentId?: string | null }) =>
+  create: (data: { name: string; parentId?: string | null; icon?: string; color?: string | null }) =>
     request<{ folder: Folder }>('/folders', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: { name?: string; icon?: string; parentId?: string | null }) =>
+  update: (id: string, data: { name?: string; icon?: string; color?: string | null; parentId?: string | null }) =>
     request<{ folder: Folder }>(`/folders/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

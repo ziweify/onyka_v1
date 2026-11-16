@@ -55,6 +55,7 @@ const updatePreferencesSchema = z.object({
   theme: z.enum(['light', 'dark']).optional(),
   accentColor: z.string().min(1).max(50).optional(),
   avatarColor: z.string().min(1).max(50).optional(),
+  autoFolderColors: z.boolean().optional(),
   editorFontSize: z.enum(['XS', 'S', 'M', 'L', 'XL', 'XXL']).optional(),
   editorFontFamily: z.string().min(1).max(100).optional(),
   darkThemeBase: z.string().min(1).max(50).optional(),

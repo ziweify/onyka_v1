@@ -415,6 +415,8 @@
     "theme_dark": "深色",
     "mode": "模式",
     "accent_color": "强调色",
+    "auto_folder_colors": "文件夹语义配色",
+    "auto_folder_colors_desc": "新建文件夹时按名称自动上色；关闭则保持清爽无色。",
     "language": "语言",
     "languages": {
       "fr": "法语",
@@ -702,6 +704,9 @@
   },
   "theme": {
     "color_picker_title": "主题色",
+    "style_picker_title": "主题风格",
+    "auto_folder_colors": "文件夹语义配色",
+    "auto_folder_colors_desc": "新建文件夹时按名称自动上色；喜欢清爽可关闭。",
     "selected": "已选",
     "colors": {
       "blue": "蓝色",

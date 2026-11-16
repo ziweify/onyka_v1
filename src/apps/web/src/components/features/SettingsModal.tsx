@@ -55,6 +55,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     theme,
     toggleTheme,
     accentColor,
+    autoFolderColors,
+    setAutoFolderColors,
     setAccentColor,
     editorFontSize,
     setEditorFontSize,
@@ -383,6 +385,36 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                               )
                             })}
                           </div>
+                        </div>
+
+                        <div className="bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border)] p-4">
+                          <button
+                            type="button"
+                            onClick={() => setAutoFolderColors(!autoFolderColors)}
+                            className="w-full flex items-start justify-between gap-3 text-left"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-[var(--color-text-primary)]">
+                                {t('settings.auto_folder_colors')}
+                              </p>
+                              <p className="text-xs text-[var(--color-text-tertiary)] mt-1 leading-snug">
+                                {t('settings.auto_folder_colors_desc')}
+                              </p>
+                            </div>
+                            <div
+                              className={`mt-0.5 w-10 h-5 rounded-full relative transition-colors flex-shrink-0 ${
+                                autoFolderColors
+                                  ? 'bg-[var(--color-accent)]'
+                                  : 'bg-[var(--color-bg-tertiary)] border border-[var(--color-border)]'
+                              }`}
+                            >
+                              <span
+                                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                                  autoFolderColors ? 'left-[22px]' : 'left-0.5'
+                                }`}
+                              />
+                            </div>
+                          </button>
                         </div>
 
                         <div className="bg-[var(--color-bg-secondary)] rounded-xl border border-[var(--color-border)] p-4">

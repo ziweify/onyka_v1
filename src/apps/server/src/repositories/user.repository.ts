@@ -27,6 +27,7 @@ export interface UserWithPassword {
   darkThemeBase: string
   lightThemeBase: string
   accentColor: string
+  autoFolderColors: boolean
   editorFontSize: string
   editorFontFamily: string
   sidebarCollapsed: boolean
@@ -106,6 +107,7 @@ export class UserRepository {
       darkThemeBase: 'default',
       lightThemeBase: 'default',
       accentColor: 'blue',
+      autoFolderColors: false,
       editorFontSize: 'S',
       editorFontFamily: 'plus-jakarta-sans',
       sidebarCollapsed: false,
@@ -379,6 +381,7 @@ export class UserRepository {
     if (prefs.theme !== undefined) updateData.theme = prefs.theme
     if (prefs.accentColor !== undefined) updateData.accentColor = prefs.accentColor
     if (prefs.avatarColor !== undefined) updateData.avatarColor = prefs.avatarColor
+    if (prefs.autoFolderColors !== undefined) updateData.autoFolderColors = prefs.autoFolderColors
     if (prefs.editorFontSize !== undefined) updateData.editorFontSize = prefs.editorFontSize
     if (prefs.editorFontFamily !== undefined) updateData.editorFontFamily = prefs.editorFontFamily
     if (prefs.darkThemeBase !== undefined) updateData.darkThemeBase = prefs.darkThemeBase
@@ -387,6 +390,9 @@ export class UserRepository {
     if (prefs.sidebarWidth !== undefined) updateData.sidebarWidth = prefs.sidebarWidth
     if (prefs.tagsCollapsed !== undefined) updateData.tagsCollapsed = prefs.tagsCollapsed
     if (prefs.tagsSectionHeight !== undefined) updateData.tagsSectionHeight = prefs.tagsSectionHeight
+    if (prefs.sharedCollapsed !== undefined) updateData.sharedCollapsed = prefs.sharedCollapsed
+    if (prefs.sharedSectionHeight !== undefined) updateData.sharedSectionHeight = prefs.sharedSectionHeight
+    if (prefs.focusEditorWidth !== undefined) updateData.focusEditorWidth = prefs.focusEditorWidth
 
     await db
       .update(users)
@@ -496,6 +502,7 @@ export class UserRepository {
       darkThemeBase: 'default',
       lightThemeBase: 'default',
       accentColor: 'amber',
+      autoFolderColors: false,
       editorFontSize: 'S',
       editorFontFamily: 'plus-jakarta-sans',
       sidebarCollapsed: false,
@@ -530,6 +537,7 @@ export class UserRepository {
       darkThemeBase: row.darkThemeBase,
       lightThemeBase: row.lightThemeBase,
       accentColor: row.accentColor,
+      autoFolderColors: row.autoFolderColors,
       editorFontSize: row.editorFontSize,
       editorFontFamily: row.editorFontFamily,
       sidebarCollapsed: row.sidebarCollapsed,

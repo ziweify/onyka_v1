@@ -144,6 +144,7 @@ interface PersistedTheme {
   darkThemeBase: ThemeBase
   lightThemeBase: ThemeBase
   accentColor: AccentColor
+  autoFolderColors?: boolean
 }
 
 function loadPersistedTheme(): Partial<PersistedTheme> {
@@ -168,12 +169,14 @@ const _initTheme: Theme = _persisted.theme ?? 'dark'
 const _initDarkBase: ThemeBase = _persisted.darkThemeBase ?? 'cursor'
 const _initLightBase: ThemeBase = _persisted.lightThemeBase ?? 'default'
 const _initAccent: AccentColor = _persisted.accentColor ?? 'amber'
+const _initAutoFolderColors = _persisted.autoFolderColors ?? false
 
 interface ThemeState {
   theme: Theme
   darkThemeBase: ThemeBase
   lightThemeBase: ThemeBase
   accentColor: AccentColor
+  autoFolderColors: boolean
   editorFontSize: EditorFontSize
   editorFontFamily: EditorFontFamily
   focusMode: boolean
@@ -191,6 +194,7 @@ interface ThemeState {
   setDarkThemeBase: (themeBase: ThemeBase) => void
   setLightThemeBase: (themeBase: ThemeBase) => void
   setAccentColor: (color: AccentColor) => void
+  setAutoFolderColors: (enabled: boolean) => void
   setEditorFontSize: (size: EditorFontSize) => void
   setEditorFontFamily: (family: EditorFontFamily) => void
   toggleFocusMode: () => void
@@ -214,6 +218,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   darkThemeBase: _initDarkBase,
   lightThemeBase: _initLightBase,
   accentColor: _initAccent,
+  autoFolderColors: _initAutoFolderColors,
   editorFontSize: 'S',
   editorFontFamily: 'geist-sans',
   focusMode: false,
@@ -236,6 +241,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
     const darkThemeBase = (user.darkThemeBase || 'default') as ThemeBase
     const lightThemeBase = (user.lightThemeBase || 'default') as ThemeBase
     const accentColor = (user.accentColor || 'amber') as AccentColor
+    const autoFolderColors = user.autoFolderColors ?? false
     const editorFontSize = (user.editorFontSize || 'S') as EditorFontSize
     const editorFontFamily = (user.editorFontFamily || 'geist-sans') as EditorFontFamily
     const sidebarCollapsed = user.sidebarCollapsed ?? false
@@ -254,6 +260,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
       darkThemeBase,
       lightThemeBase,
       accentColor,
+      autoFolderColors,
       editorFontSize,
       editorFontFamily,
       sidebarCollapsed,
@@ -267,7 +274,7 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
 
     const themeBase = theme === 'dark' ? darkThemeBase : lightThemeBase
     updateDocumentTheme(theme, themeBase, accentColor, editorFontSize, editorFontFamily)
-    persistTheme({ theme, darkThemeBase, lightThemeBase, accentColor })
+    persistTheme({ theme, darkThemeBase, lightThemeBase, accentColor, autoFolderColors })
   },
 
   setTheme: (theme) => {
@@ -323,8 +330,26 @@ export const useThemeStore = create<ThemeState>()((set, get) => ({
   setAccentColor: (accentColor) => {
     set({ accentColor })
     updateDocumentTheme(get().theme, get().getCurrentThemeBase(), accentColor, get().editorFontSize, get().editorFontFamily)
-    persistTheme({ theme: get().theme, darkThemeBase: get().darkThemeBase, lightThemeBase: get().lightThemeBase, accentColor })
+    persistTheme({
+      theme: get().theme,
+      darkThemeBase: get().darkThemeBase,
+      lightThemeBase: get().lightThemeBase,
+      accentColor,
+      autoFolderColors: get().autoFolderColors,
+    })
     safeUpdatePreferences({ accentColor })
+  },
+
+  setAutoFolderColors: (autoFolderColors) => {
+    set({ autoFolderColors })
+    persistTheme({
+      theme: get().theme,
+      darkThemeBase: get().darkThemeBase,
+      lightThemeBase: get().lightThemeBase,
+      accentColor: get().accentColor,
+      autoFolderColors,
+    })
+    safeUpdatePreferences({ autoFolderColors })
   },
 
   setEditorFontSize: (editorFontSize) => {

@@ -10,6 +10,8 @@ router.use(authenticate)
 const createFolderSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
   parentId: z.string().nullable().optional(),
+  icon: z.string().max(100).optional(),
+  color: z.string().max(32).nullable().optional(),
 })
 
 const updateFolderSchema = z.object({

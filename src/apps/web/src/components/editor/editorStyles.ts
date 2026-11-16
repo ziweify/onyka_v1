@@ -197,8 +197,11 @@ export const EDITOR_STYLES = `
     color: var(--color-text-tertiary);
   }
 
-  .fluid-editor-content ::selection {
-    background: var(--color-accent-muted);
+  .fluid-editor-content ::selection,
+  .fluid-editor-content *::selection {
+    background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-bg-primary));
+    color: var(--color-text-primary);
+    -webkit-text-fill-color: var(--color-text-primary);
   }
 
   .ProseMirror p.is-editor-empty:first-child::before {

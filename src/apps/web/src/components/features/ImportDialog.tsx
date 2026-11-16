@@ -93,7 +93,7 @@ export function ImportDialog({ isOpen, onClose, folderId, onImported }: ImportDi
           <span className="text-sm font-medium text-[var(--color-text-primary)]">
             {importing ? t('common.loading') : t('import.choose_file')}
           </span>
-          <span className="text-xs text-[var(--color-text-tertiary)]">.md, .html, .txt</span>
+          <span className="text-xs text-[var(--color-text-tertiary)]">.md, .html（含 SingleFile）, .txt</span>
         </button>
         {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
       </div>

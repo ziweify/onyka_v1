@@ -317,9 +317,14 @@
   },
   "import": {
     "title": "Importer une note",
-    "description": "Créer une note à partir d’un fichier Markdown ou HTML.",
+    "description": "Importer du Markdown, ou une page HTML complète (ex. SingleFile) avec ses styles pour consultation hors ligne.",
     "choose_file": "Choisir un fichier",
-    "error": "Échec de l’import. Vérifiez le format du fichier."
+    "error": "Échec de l’import. Vérifiez le format du fichier.",
+    "snapshot_badge": "Instantané web",
+    "snapshot_title": "Page enregistrée",
+    "snapshot_open": "Ouvrir dans un nouvel onglet",
+    "snapshot_reload": "Recharger",
+    "snapshot_load_error": "Impossible de charger l’instantané web. Réessayez."
   },
   "settings": {
     "title": "Paramètres",

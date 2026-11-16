@@ -33,6 +33,8 @@ app.use(helmet({
       connectSrc: ["'self'", 'ws:', 'wss:'],
       fontSrc: ["'self'", 'data:'],
       objectSrc: ["'none'"],
+      frameSrc: ["'self'", 'blob:'],
+      childSrc: ["'self'", 'blob:'],
       frameAncestors: ["'none'"],
     },
   },

@@ -317,9 +317,14 @@
   },
   "import": {
     "title": "导入笔记",
-    "description": "从 Markdown 或 HTML 文件创建新笔记。",
+    "description": "支持 Markdown，以及 SingleFile 等完整网页 HTML（保留原样式，离线可看）。",
     "choose_file": "选择文件",
-    "error": "导入失败，请检查文件格式后重试。"
+    "error": "导入失败，请检查文件格式后重试。",
+    "snapshot_badge": "网页快照",
+    "snapshot_title": "已保存的网页",
+    "snapshot_open": "在新标签打开",
+    "snapshot_reload": "重新加载",
+    "snapshot_load_error": "网页快照加载失败，请稍后重试。"
   },
   "settings": {
     "title": "设置",

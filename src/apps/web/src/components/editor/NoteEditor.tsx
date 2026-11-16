@@ -27,6 +27,8 @@ import { useAutoSave } from '@/hooks'
 import { useBreakpoint } from '@/hooks/useIsMobile'
 import { useCollaboration } from '@/hooks/useCollaboration'
 import { FluidEditor } from './FluidEditor'
+import { WebSnapshotViewer } from './WebSnapshotViewer'
+import { extractWebSnapshotId } from '@/utils/webSnapshot'
 import { MarkdownSourceEditor } from './MarkdownSourceEditor'
 import { DocumentOutline } from './DocumentOutline'
 import { NoteAttachmentsPanel } from './NoteAttachmentsPanel'
@@ -583,6 +585,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const statusConfig = STATUS_CONFIG[status]
 
   const displayWordCount = useMemo(() => countWords(localContent), [localContent])
+  const webSnapshotId = useMemo(() => extractWebSnapshotId(localContent), [localContent])
 
   const currentFontFamily = EDITOR_FONT_FAMILIES.find(f => f.id === editorFontFamily)
 
@@ -1178,7 +1181,13 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             isReadOnly ? 'editor-writing-surface--readonly' : 'pt-2'
           }`}
         >
-          {markdownMode ? (
+          {webSnapshotId ? (
+            <WebSnapshotViewer
+              key={`${note.id}-${activePageId}-${webSnapshotId}`}
+              attachmentId={webSnapshotId}
+              title={localTitle || note.title}
+            />
+          ) : markdownMode ? (
             <MarkdownSourceEditor
               htmlContent={localContent}
               readOnly={isReadOnly}

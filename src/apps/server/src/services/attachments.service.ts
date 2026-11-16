@@ -93,6 +93,53 @@ export class AttachmentsService {
     return attachmentRepository.listForNote(noteId)
   }
 
+  /** Store a ready attachment from an in-memory buffer (e.g. HTML web snapshot). */
+  async createReadyFromBuffer(
+    noteId: string,
+    userId: string,
+    input: {
+      originalName: string
+      mimeType: string
+      buffer: Buffer
+      fingerprint?: string
+    }
+  ): Promise<Attachment> {
+    await this.assertNoteEdit(noteId, userId)
+
+    const originalName = input.originalName?.trim()
+    if (!originalName) {
+      throw new AttachmentsServiceError('Invalid file name', 'INVALID_INPUT', 400)
+    }
+    if (!input.buffer || input.buffer.length === 0) {
+      throw new AttachmentsServiceError('Empty file', 'INVALID_INPUT', 400)
+    }
+
+    const fingerprint =
+      input.fingerprint?.trim() ||
+      createHash('sha256').update(input.buffer).digest('hex')
+
+    const attachment = await attachmentRepository.create({
+      homeNoteId: noteId,
+      originalName,
+      mimeType: input.mimeType || 'application/octet-stream',
+      size: input.buffer.length,
+      fingerprint,
+      ownerId: userId,
+      status: 'ready',
+    })
+
+    await attachmentRepository.linkToNote(noteId, attachment.id)
+
+    const destPath = finalPath(noteId, attachment.id)
+    writeFileSync(destPath, encryptBuffer(input.buffer))
+
+    const updated = await attachmentRepository.getById(attachment.id)
+    if (!updated) {
+      throw new AttachmentsServiceError('Attachment not found', 'NOT_FOUND', 404)
+    }
+    return updated
+  }
+
   async createSession(
     noteId: string,
     userId: string,

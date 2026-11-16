@@ -48,9 +48,11 @@
     background: var(--color-text-tertiary);
   }
 
+  /* Opaque mix avoids Chromium forcing white text on translucent selection backgrounds */
   ::selection {
-    background: var(--color-accent);
-    color: white;
+    background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-bg-primary));
+    color: var(--color-text-primary);
+    -webkit-text-fill-color: var(--color-text-primary);
   }
 
   :focus-visible {

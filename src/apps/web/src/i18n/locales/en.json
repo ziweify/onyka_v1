@@ -317,9 +317,14 @@
   },
   "import": {
     "title": "Import note",
-    "description": "Create a new note from a Markdown or HTML file.",
+    "description": "Import Markdown, or a full saved page HTML (e.g. SingleFile) with original styles for offline viewing.",
     "choose_file": "Choose file",
-    "error": "Import failed. Check the file format and try again."
+    "error": "Import failed. Check the file format and try again.",
+    "snapshot_badge": "Web snapshot",
+    "snapshot_title": "Saved page",
+    "snapshot_open": "Open in new tab",
+    "snapshot_reload": "Reload",
+    "snapshot_load_error": "Failed to load the web snapshot. Please try again."
   },
   "settings": {
     "title": "Settings",

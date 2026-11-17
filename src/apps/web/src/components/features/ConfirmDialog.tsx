@@ -63,11 +63,14 @@ export function ConfirmDialog({
       ? 'bg-red-500 hover:bg-red-600 text-white'
       : 'bg-amber-500 hover:bg-amber-600 text-white'
 
+  // Above other modals (Import/Trash use z-[70]); confirms must always sit on top.
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center animate-fade-in">
+    <div className="fixed inset-0 z-[90] flex items-center justify-center animate-fade-in">
       <div
         className="absolute inset-0 bg-black/30"
-        onClick={onClose}
+        onClick={() => {
+          if (!isLoading) onClose()
+        }}
       />
 
       <div

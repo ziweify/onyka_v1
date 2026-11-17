@@ -108,8 +108,11 @@ export function ImportDialog({
 
   if (!isOpen) return null
 
+  const showChooser = !pendingOverwrite
+
   return createPortal(
     <>
+      {showChooser && (
       <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
         <button
           type="button"
@@ -172,6 +175,7 @@ export function ImportDialog({
           {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
         </div>
       </div>
+      )}
 
       <ConfirmDialog
         isOpen={Boolean(pendingOverwrite)}
@@ -180,7 +184,7 @@ export function ImportDialog({
           setPendingOverwrite(null)
         }}
         onConfirm={() => {
-          if (!pendingOverwrite) return
+          if (!pendingOverwrite || importing) return
           void runImport(pendingOverwrite, true)
         }}
         title={t('import.overwrite_title')}

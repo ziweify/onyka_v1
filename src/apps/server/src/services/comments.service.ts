@@ -69,7 +69,7 @@ export class CommentsService {
       throw new CommentsServiceError('Comment not found', 'COMMENT_NOT_FOUND', 404)
     }
 
-    if (comment.isGuest || comment.userId === SHARE_GUEST_USER_ID) {
+    if (comment.userId === SHARE_GUEST_USER_ID) {
       throw new CommentsServiceError('Guest comments cannot be edited', 'ACCESS_DENIED', 403)
     }
 

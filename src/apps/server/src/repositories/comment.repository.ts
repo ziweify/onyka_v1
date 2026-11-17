@@ -194,7 +194,7 @@ export class CommentRepository {
       content: decrypt(row.content),
       guestName,
       shareLinkId: row.shareLinkId ?? null,
-      isGuest: userId === SHARE_GUEST_USER_ID || Boolean(guestName && row.shareLinkId),
+      isGuest: userId === SHARE_GUEST_USER_ID,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }

@@ -2,6 +2,7 @@ import { Router, type Router as RouterType } from 'express'
 import { z } from 'zod'
 import rateLimit from 'express-rate-limit'
 import { authService, AuthError } from '../services/auth.service.js'
+import { reauthService } from '../services/reauth.service.js'
 import { tokenService } from '../services/token.service.js'
 import { settingsService } from '../services/settings.service.js'
 import { statsService } from '../services/stats.service.js'
@@ -201,6 +202,7 @@ router.post('/logout', async (req, res, next) => {
 
     res.clearCookie('access_token', COOKIE_OPTIONS)
     res.clearCookie('refresh_token', COOKIE_OPTIONS)
+    reauthService.clearCookie(res)
 
     res.json({ success: true })
   } catch (error) {
@@ -216,6 +218,7 @@ router.post('/logout-all', authenticate, async (req, res, next) => {
     res.clearCookie('access_token', COOKIE_OPTIONS)
     res.clearCookie('refresh_token', COOKIE_OPTIONS)
     res.clearCookie(TRUSTED_DEVICE_COOKIE, COOKIE_OPTIONS)
+    reauthService.clearCookie(res)
 
     res.json({ success: true })
   } catch (error) {
@@ -861,6 +864,25 @@ router.get('/sessions', authenticate, async (req, res, next) => {
 
 const revokeSessionSchema = z.object({
   password: z.string().min(1, 'Password is required'),
+})
+
+const confirmPasswordSchema = z.object({
+  password: z.string().min(1, 'Password is required').max(128),
+})
+
+/**
+ * POST /api/auth/confirm-password
+ * Verify account password and open a 5-minute sensitive-action window.
+ */
+router.post('/confirm-password', authenticate, async (req, res, next) => {
+  try {
+    const { password } = confirmPasswordSchema.parse(req.body)
+    await authService.verifyPassword(req.userId!, password)
+    const { expiresAt } = await reauthService.issueCookie(req.userId!, res)
+    res.json({ success: true, expiresAt })
+  } catch (error) {
+    next(error)
+  }
 })
 
 /**

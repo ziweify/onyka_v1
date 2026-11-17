@@ -547,7 +547,7 @@
     },
     "trash": {
       "title": "Trash",
-      "description": "Deleted notes are kept for 30 days before permanent deletion.",
+      "description": "Deleting a note moves it to trash for about 30 days. Emptying trash requires your account password (skipped for 5 minutes after verification).",
       "empty": "Empty trash",
       "empty_state": "Trash is empty",
       "empty_confirm_title": "Empty trash?",
@@ -557,7 +557,13 @@
       "restore_error": "Failed to restore",
       "emptied": "Trash emptied",
       "empty_error": "Failed to empty trash",
-      "days_remaining": "{{n}} days remaining"
+      "days_remaining": "{{n}} days remaining",
+      "password_label": "Account password",
+      "password_placeholder": "Enter your password to confirm",
+      "password_required": "Password is required",
+      "password_incorrect": "Incorrect password",
+      "password_hint": "After verifying, you won't need to re-enter it for 5 minutes.",
+      "reauth_valid": "Within the 5-minute verification window — password not required."
     }
   },
   "shortcuts": {

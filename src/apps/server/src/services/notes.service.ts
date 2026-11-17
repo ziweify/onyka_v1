@@ -174,8 +174,29 @@ export class NotesService {
       throw new NotesServiceError('Access denied', 'ACCESS_DENIED', 403)
     }
 
+    if (!note.isDeleted) {
+      throw new NotesServiceError(
+        'Move the note to trash before permanently deleting it',
+        'NOT_IN_TRASH',
+        400
+      )
+    }
+
     await noteRepository.permanentDelete(noteId)
     searchService.removeNoteFromIndex(noteId)
+  }
+
+  /** Permanently delete every soft-deleted note owned by the user. */
+  async emptyTrash(userId: string): Promise<{ deleted: number }> {
+    const deletedNotes = await noteRepository.findByOwner(userId, { isDeleted: true })
+    let deleted = 0
+    for (const note of deletedNotes) {
+      if (note.ownerId !== userId) continue
+      await noteRepository.permanentDelete(note.id)
+      searchService.removeNoteFromIndex(note.id)
+      deleted += 1
+    }
+    return { deleted }
   }
 
   async addTag(noteId: string, userId: string, tagId: string): Promise<void> {

@@ -15,8 +15,12 @@ import { Button, LanguageSwitcher } from '@/components/ui'
 import { ConfirmDialog } from '@/components/features'
 import { useSettingsStore } from '@/stores/settings'
 import { toast } from '@/components/ui/Toast'
-import { notesApi } from '@/services/api'
+import { notesApi, ApiException } from '@/services/api'
 import { getCurrentLanguage } from '@/i18n'
+import {
+  isSensitiveReauthValid,
+  markSensitiveReauth,
+} from '@/utils/sensitiveReauth'
 import type { Note } from '@onyka/shared'
 
 export function SettingsPage() {
@@ -29,6 +33,9 @@ export function SettingsPage() {
   const [restoringId, setRestoringId] = useState<string | null>(null)
   const [showEmptyTrashDialog, setShowEmptyTrashDialog] = useState(false)
   const [isEmptyingTrash, setIsEmptyingTrash] = useState(false)
+  const [trashPassword, setTrashPassword] = useState('')
+  const [trashPasswordError, setTrashPasswordError] = useState<string | null>(null)
+  const [needsTrashPassword, setNeedsTrashPassword] = useState(true)
 
   useEffect(() => {
     fetchSettings()
@@ -59,15 +66,39 @@ export function SettingsPage() {
     }
   }
 
+  const openEmptyTrashDialog = () => {
+    setNeedsTrashPassword(!isSensitiveReauthValid())
+    setTrashPassword('')
+    setTrashPasswordError(null)
+    setShowEmptyTrashDialog(true)
+  }
+
   const handleEmptyTrash = async () => {
+    if (needsTrashPassword && !trashPassword.trim()) {
+      setTrashPasswordError(t('settings.trash.password_required'))
+      return
+    }
     setIsEmptyingTrash(true)
+    setTrashPasswordError(null)
     try {
-      await Promise.all(deletedNotes.map((note) => notesApi.delete(note.id)))
+      const result = await notesApi.emptyTrash(
+        needsTrashPassword ? trashPassword : undefined
+      )
+      if (result.reauthExpiresAt) markSensitiveReauth(result.reauthExpiresAt)
       setDeletedNotes([])
       setShowEmptyTrashDialog(false)
-      toast.success('Trash emptied')
-    } catch {
-      toast.error('Failed to empty trash')
+      setTrashPassword('')
+      toast.success(t('settings.trash.emptied'))
+    } catch (err) {
+      if (err instanceof ApiException && err.code === 'INVALID_PASSWORD') {
+        setTrashPasswordError(t('settings.trash.password_incorrect'))
+      } else if (err instanceof ApiException && err.code === 'REAUTH_REQUIRED') {
+        setNeedsTrashPassword(true)
+        setTrashPasswordError(t('settings.trash.password_required'))
+      } else {
+        toast.error(t('settings.trash.empty_error'))
+        setShowEmptyTrashDialog(false)
+      }
     } finally {
       setIsEmptyingTrash(false)
     }
@@ -219,16 +250,16 @@ export function SettingsPage() {
               </div>
               {deletedNotes.length > 0 && (
                 <button
-                  onClick={() => setShowEmptyTrashDialog(true)}
+                  onClick={openEmptyTrashDialog}
                   className="text-sm text-[var(--color-error)] hover:text-[var(--color-error)]/80 transition-colors flex-shrink-0"
                 >
-                  Empty trash
+                  {t('settings.trash.empty')}
                 </button>
               )}
             </div>
 
             <p className="text-sm text-[var(--color-text-secondary)] mb-4">
-              Deleted notes are kept for 30 days before being permanently removed.
+              {t('settings.trash.description')}
             </p>
 
             {isLoadingTrash ? (
@@ -277,13 +308,50 @@ export function SettingsPage() {
 
       <ConfirmDialog
         isOpen={showEmptyTrashDialog}
-        onClose={() => setShowEmptyTrashDialog(false)}
+        onClose={() => {
+          if (isEmptyingTrash) return
+          setShowEmptyTrashDialog(false)
+          setTrashPassword('')
+          setTrashPasswordError(null)
+        }}
         onConfirm={handleEmptyTrash}
-        title="Empty trash?"
-        message={`${deletedNotes.length} note${deletedNotes.length === 1 ? '' : 's'} will be permanently deleted. This action cannot be undone.`}
-        confirmLabel="Empty trash"
+        title={t('settings.trash.empty_confirm_title')}
+        message={t('settings.trash.empty_confirm_message', { count: deletedNotes.length })}
+        confirmLabel={t('settings.trash.empty')}
         isLoading={isEmptyingTrash}
-      />
+      >
+        {needsTrashPassword ? (
+          <div className="mt-4 text-left space-y-2">
+            <label className="block text-xs text-[var(--color-text-secondary)]">
+              {t('settings.trash.password_label')}
+            </label>
+            <input
+              type="password"
+              autoFocus
+              value={trashPassword}
+              onChange={(e) => {
+                setTrashPassword(e.target.value)
+                setTrashPasswordError(null)
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleEmptyTrash()
+              }}
+              placeholder={t('settings.trash.password_placeholder')}
+              className="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-sm"
+            />
+            {trashPasswordError && (
+              <p className="text-xs text-[var(--color-error)]">{trashPasswordError}</p>
+            )}
+            <p className="text-[11px] text-[var(--color-text-tertiary)]">
+              {t('settings.trash.password_hint')}
+            </p>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-[var(--color-text-tertiary)]">
+            {t('settings.trash.reauth_valid')}
+          </p>
+        )}
+      </ConfirmDialog>
     </div>
   )
 }

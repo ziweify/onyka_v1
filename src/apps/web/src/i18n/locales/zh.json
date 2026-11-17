@@ -547,7 +547,7 @@
     },
     "trash": {
       "title": "废纸篓",
-      "description": "已删除笔记保留 30 天后永久清除。",
+      "description": "删除笔记会先移入废纸篓，保留约 30 天。清空废纸篓需验证登录密码（5 分钟内免重复验证）。",
       "empty": "清空废纸篓",
       "empty_state": "废纸篓为空",
       "empty_confirm_title": "清空废纸篓？",
@@ -557,7 +557,13 @@
       "restore_error": "还原失败",
       "emptied": "废纸篓已清空",
       "empty_error": "清空失败",
-      "days_remaining": "剩余 {{n}} 天"
+      "days_remaining": "剩余 {{n}} 天",
+      "password_label": "登录密码",
+      "password_placeholder": "输入账户密码以确认",
+      "password_required": "请输入密码",
+      "password_incorrect": "密码不正确",
+      "password_hint": "验证后 5 分钟内再次清空或永久删除无需重复输入。",
+      "reauth_valid": "已在 5 分钟验证窗口内，无需再次输入密码。"
     }
   },
   "shortcuts": {

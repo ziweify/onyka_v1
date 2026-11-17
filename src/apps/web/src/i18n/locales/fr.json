@@ -545,7 +545,7 @@
     },
     "trash": {
       "title": "Corbeille",
-      "description": "Les notes supprimées sont conservées 30 jours avant suppression définitive.",
+      "description": "Supprimer une note l'envoie d'abord à la corbeille (~30 jours). Vider la corbeille demande le mot de passe du compte (pas besoin de le ressaisir pendant 5 minutes).",
       "empty": "Vider la corbeille",
       "empty_state": "La corbeille est vide",
       "empty_confirm_title": "Vider la corbeille ?",
@@ -555,7 +555,13 @@
       "restore_error": "Erreur lors de la restauration",
       "emptied": "Corbeille vidée",
       "empty_error": "Erreur lors du vidage",
-      "days_remaining": "{{n}} jours restants"
+      "days_remaining": "{{n}} jours restants",
+      "password_label": "Mot de passe du compte",
+      "password_placeholder": "Saisissez votre mot de passe pour confirmer",
+      "password_required": "Mot de passe requis",
+      "password_incorrect": "Mot de passe incorrect",
+      "password_hint": "Après vérification, inutile de le ressaisir pendant 5 minutes.",
+      "reauth_valid": "Fenêtre de 5 minutes encore valide — mot de passe non requis."
     }
   },
   "shortcuts": {

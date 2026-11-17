@@ -242,6 +242,13 @@ export const authApi = {
       method: 'POST',
     }),
 
+  /** Opens a 5-minute sensitive-action window after verifying the account password. */
+  confirmPassword: (password: string) =>
+    request<{ success: boolean; expiresAt: number }>('/auth/confirm-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+
   me: () => request<{ user: User }>('/auth/me'),
 
   refresh: () =>
@@ -379,6 +386,19 @@ export const notesApi = {
   delete: (id: string) =>
     request<{ success: boolean }>(`/notes/${id}`, {
       method: 'DELETE',
+    }),
+
+  /** Permanent delete — note must already be in trash. Password required unless recent reauth. */
+  permanentDelete: (id: string, password?: string) =>
+    request<{ success: boolean; reauthExpiresAt?: number }>(`/notes/${id}/permanent`, {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    }),
+
+  emptyTrash: (password?: string) =>
+    request<{ success: boolean; deleted: number; reauthExpiresAt?: number }>('/notes/trash/empty', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
     }),
 
   restore: (id: string) =>

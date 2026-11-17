@@ -3,6 +3,7 @@ import { z } from 'zod'
 import rateLimit from 'express-rate-limit'
 import { notesService } from '../services/notes.service.js'
 import { importService } from '../services/import.service.js'
+import { reauthService } from '../services/reauth.service.js'
 import { authenticate } from '../middleware/auth.js'
 
 const router: RouterType = Router()
@@ -204,10 +205,37 @@ router.post('/:id/restore', async (req, res, next) => {
   }
 })
 
+const sensitivePasswordSchema = z.object({
+  password: z.string().max(128).optional(),
+})
+
+router.post('/trash/empty', async (req, res, next) => {
+  try {
+    const body = sensitivePasswordSchema.parse(req.body ?? {})
+    const reauth = await reauthService.requirePasswordOrRecentReauth(
+      req,
+      res,
+      req.userId!,
+      body.password
+    )
+    const result = await notesService.emptyTrash(req.userId!)
+    res.json({ success: true, ...result, reauthExpiresAt: reauth.expiresAt })
+  } catch (error) {
+    next(error)
+  }
+})
+
 router.delete('/:id/permanent', async (req, res, next) => {
   try {
+    const body = sensitivePasswordSchema.parse(req.body ?? {})
+    const reauth = await reauthService.requirePasswordOrRecentReauth(
+      req,
+      res,
+      req.userId!,
+      body.password
+    )
     await notesService.permanentDelete(req.params.id, req.userId!)
-    res.json({ success: true })
+    res.json({ success: true, reauthExpiresAt: reauth.expiresAt })
   } catch (error) {
     next(error)
   }

@@ -15,7 +15,8 @@ export class ImportServiceError extends Error {
   constructor(
     message: string,
     public code: string,
-    public statusCode: number = 400
+    public statusCode: number = 400,
+    public details?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'ImportServiceError'
@@ -66,6 +67,10 @@ function buildSnapshotMarker(attachmentId: string, title: string): string {
   )
 }
 
+function titlesMatch(a: string, b: string): boolean {
+  return a.trim().toLocaleLowerCase() === b.trim().toLocaleLowerCase()
+}
+
 export class ImportService {
   async importNote(
     ownerId: string,
@@ -74,12 +79,15 @@ export class ImportService {
       content: string
       title?: string
       folderId?: string | null
+      overwrite?: boolean
     }
   ): Promise<Note> {
     const raw = input.content?.trim()
     if (!raw) {
       throw new ImportServiceError('Content is required', 'CONTENT_REQUIRED', 400)
     }
+
+    const folderId = input.folderId ?? null
 
     // All HTML imports become offline web snapshots (preserves SingleFile styles).
     // Markdown still becomes editable TipTap notes.
@@ -88,22 +96,42 @@ export class ImportService {
         bytes: Buffer.byteLength(raw, 'utf8'),
         fullPage: isFullPageHtml(raw),
         title: input.title ?? null,
+        overwrite: Boolean(input.overwrite),
       })
-      return this.importWebSnapshot(ownerId, raw, input.title, input.folderId)
+      return this.importWebSnapshot(ownerId, raw, input.title, folderId, input.overwrite)
     }
 
-    let html: string
-    html = DOMPurify.sanitize(marked.parse(raw) as string)
+    const html = DOMPurify.sanitize(marked.parse(raw) as string)
 
     const title =
       input.title?.trim() ||
       (input.format === 'md' ? this.titleFromMarkdown(raw) : extractTitleFromHtml(html)) ||
       'Imported note'
 
+    const existing = await this.findExistingByTitle(ownerId, folderId, title)
+    if (existing) {
+      if (!input.overwrite) {
+        throw new ImportServiceError(
+          'A note with this name already exists in this folder',
+          'NAME_CONFLICT',
+          409,
+          { noteId: existing.id, title: existing.title }
+        )
+      }
+      if (existing.isEncrypted) {
+        throw new ImportServiceError(
+          'Cannot overwrite an encrypted note',
+          'NOTE_ENCRYPTED',
+          400
+        )
+      }
+      return this.overwriteMarkdownNote(existing, title, html)
+    }
+
     const note = await noteRepository.create(ownerId, {
       title,
       content: html,
-      folderId: input.folderId ?? null,
+      folderId,
     })
 
     await pageRepository.create(note.id, {
@@ -119,16 +147,75 @@ export class ImportService {
     return note
   }
 
+  private async findExistingByTitle(
+    ownerId: string,
+    folderId: string | null,
+    title: string
+  ): Promise<Note | null> {
+    const notes = await noteRepository.findByOwner(ownerId, {
+      folderId,
+      isDeleted: false,
+    })
+    return notes.find((n) => titlesMatch(n.title, title)) ?? null
+  }
+
+  private async overwriteMarkdownNote(
+    existing: Note,
+    title: string,
+    html: string
+  ): Promise<Note> {
+    await noteRepository.update(existing.id, { title, content: html })
+    const pages = await pageRepository.findByNoteId(existing.id)
+    if (pages.length > 0) {
+      await pageRepository.update(pages[0].id, { title, content: html })
+    } else {
+      await pageRepository.create(existing.id, {
+        title,
+        content: html,
+        position: 0,
+      })
+    }
+    await noteUploadRepository.syncFromNoteContent(existing.id, html)
+    await noteAttachmentRepository.syncFromNoteContent(existing.id, html)
+    const updated = await noteRepository.findById(existing.id)
+    if (!updated) {
+      throw new ImportServiceError('Note not found after overwrite', 'NOTE_NOT_FOUND', 500)
+    }
+    searchService.indexNote(updated)
+    return updated
+  }
+
   private async importWebSnapshot(
     ownerId: string,
     rawHtml: string,
     titleInput?: string,
-    folderId?: string | null
+    folderId?: string | null,
+    overwrite?: boolean
   ): Promise<Note> {
     const title =
       titleInput?.trim() ||
       extractTitleFromHtml(rawHtml) ||
       '网页快照'
+
+    const existing = await this.findExistingByTitle(ownerId, folderId ?? null, title)
+    if (existing) {
+      if (!overwrite) {
+        throw new ImportServiceError(
+          'A note with this name already exists in this folder',
+          'NAME_CONFLICT',
+          409,
+          { noteId: existing.id, title: existing.title }
+        )
+      }
+      if (existing.isEncrypted) {
+        throw new ImportServiceError(
+          'Cannot overwrite an encrypted note',
+          'NOTE_ENCRYPTED',
+          400
+        )
+      }
+      return this.overwriteWebSnapshot(existing, title, rawHtml)
+    }
 
     // Create note first so attachment can use homeNoteId
     const placeholder = '<p>正在保存网页快照…</p>'
@@ -154,13 +241,48 @@ export class ImportService {
     })
 
     const marker = buildSnapshotMarker(attachment.id, title)
-    await noteRepository.update(note.id, { content: marker })
-    await pageRepository.update(page.id, { content: marker })
+    await noteRepository.update(note.id, { content: marker, icon: 'Globe' })
+    await pageRepository.update(page.id, { content: marker, title })
     await noteAttachmentRepository.syncFromNoteContent(note.id, marker)
 
     const updated = await noteRepository.findById(note.id)
     if (!updated) {
       throw new ImportServiceError('Note not found after import', 'NOTE_NOT_FOUND', 500)
+    }
+    searchService.indexNote(updated)
+    return updated
+  }
+
+  private async overwriteWebSnapshot(
+    existing: Note,
+    title: string,
+    rawHtml: string
+  ): Promise<Note> {
+    const buffer = Buffer.from(rawHtml, 'utf8')
+    const safeFileTitle = title.replace(/[\\/:*?"<>|]+/g, '_').slice(0, 80) || 'snapshot'
+    const attachment = await attachmentsService.createReadyFromBuffer(existing.id, existing.ownerId, {
+      originalName: `${safeFileTitle}.html`,
+      mimeType: 'text/html; charset=utf-8',
+      buffer,
+    })
+
+    const marker = buildSnapshotMarker(attachment.id, title)
+    await noteRepository.update(existing.id, { title, content: marker, icon: 'Globe' })
+    const pages = await pageRepository.findByNoteId(existing.id)
+    if (pages.length > 0) {
+      await pageRepository.update(pages[0].id, { title, content: marker })
+    } else {
+      await pageRepository.create(existing.id, {
+        title,
+        content: marker,
+        position: 0,
+      })
+    }
+    await noteAttachmentRepository.syncFromNoteContent(existing.id, marker)
+
+    const updated = await noteRepository.findById(existing.id)
+    if (!updated) {
+      throw new ImportServiceError('Note not found after overwrite', 'NOTE_NOT_FOUND', 500)
     }
     searchService.indexNote(updated)
     return updated

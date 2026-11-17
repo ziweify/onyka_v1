@@ -13,6 +13,7 @@ import { SparksServiceError } from '../services/sparks.service.js'
 import { NoteShareLinkServiceError } from '../services/note-share-link.service.js'
 import { CommentsServiceError } from '../services/comments.service.js'
 import { AttachmentsServiceError } from '../services/attachments.service.js'
+import { ImportServiceError } from '../services/import.service.js'
 import { logger } from '../utils/logger.js'
 
 export class AppError extends Error {
@@ -128,6 +129,18 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
       error: {
         code: err.code,
         message: err.message,
+      },
+      timestamp: new Date().toISOString(),
+      path: req.path,
+    })
+  }
+
+  if (err instanceof ImportServiceError) {
+    return res.status(err.statusCode).json({
+      error: {
+        code: err.code,
+        message: err.message,
+        details: err.details,
       },
       timestamp: new Date().toISOString(),
       path: req.path,

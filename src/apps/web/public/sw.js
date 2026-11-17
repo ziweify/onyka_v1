@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onyka-v25'
+const CACHE_NAME = 'onyka-v26'
 const STATIC_ASSETS = ['/manifest.json']
 
 self.addEventListener('install', (event) => {

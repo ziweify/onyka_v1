@@ -371,6 +371,7 @@ export const notesApi = {
     content: string
     title?: string
     folderId?: string | null
+    overwrite?: boolean
   }) =>
     request<{ note: Note }>('/notes/import', {
       method: 'POST',

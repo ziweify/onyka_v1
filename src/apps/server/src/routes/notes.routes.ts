@@ -146,13 +146,15 @@ const importNoteSchema = z.object({
   content: z.string().min(1).max(MAX_CONTENT_LENGTH),
   title: z.string().max(500).optional(),
   folderId: z.string().nullable().optional(),
+  /** When true, replace an existing note with the same title in the same folder. */
+  overwrite: z.boolean().optional(),
 })
 
 router.post('/import', createNoteRateLimit, async (req, res, next) => {
   try {
     const input = importNoteSchema.parse(req.body)
     const note = await importService.importNote(req.userId!, input)
-    res.status(201).json({ note })
+    res.status(input.overwrite ? 200 : 201).json({ note })
   } catch (error) {
     next(error)
   }

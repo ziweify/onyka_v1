@@ -239,9 +239,9 @@
   },
   "encryption": {
     "enable_title": "Lock this note",
-    "enable_desc": "Your passphrase is used only on this device to encrypt and decrypt. It is never sent to the server. If you forget it, the content cannot be recovered. Closing the browser, logging out, or idle timeout clears the key from memory.",
+    "enable_desc": "Your passphrase is used only on this device to encrypt and decrypt. It is never sent to the server. If you forget it, the content cannot be recovered. Closing the note tab, closing the browser, logging out, or idle timeout clears the key from memory.",
     "unlock_title": "Unlock note",
-    "unlock_desc": "Enter the lock passphrase to decrypt locally. The server never stored this passphrase.",
+    "unlock_desc": "Enter the lock passphrase to decrypt locally. Closing the note tab re-locks it; the server never stored this passphrase.",
     "password_label": "Passphrase",
     "password_placeholder": "At least 8 characters",
     "confirm_label": "Confirm passphrase",

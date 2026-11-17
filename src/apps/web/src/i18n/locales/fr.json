@@ -237,9 +237,9 @@
   },
   "encryption": {
     "enable_title": "Verrouiller cette note",
-    "enable_desc": "La phrase secrète sert uniquement sur cet appareil pour chiffrer et déchiffrer. Elle n'est jamais envoyée au serveur. Si vous l'oubliez, le contenu ne pourra pas être récupéré. Fermer le navigateur, se déconnecter ou l'inactivité efface la clé de la mémoire.",
+    "enable_desc": "La phrase secrète sert uniquement sur cet appareil pour chiffrer et déchiffrer. Elle n'est jamais envoyée au serveur. Si vous l'oubliez, le contenu ne pourra pas être récupéré. Fermer l'onglet de la note, fermer le navigateur, se déconnecter ou l'inactivité efface la clé de la mémoire.",
     "unlock_title": "Déverrouiller la note",
-    "unlock_desc": "Saisissez la phrase secrète pour déchiffrer localement. Le serveur ne l'a jamais stockée.",
+    "unlock_desc": "Saisissez la phrase secrète pour déchiffrer localement. Fermer l'onglet de la note la verrouille à nouveau ; le serveur ne l'a jamais stockée.",
     "password_label": "Phrase secrète",
     "password_placeholder": "Au moins 8 caractères",
     "confirm_label": "Confirmer",

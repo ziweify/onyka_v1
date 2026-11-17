@@ -1,8 +1,14 @@
 import { create } from 'zustand'
+import { useNoteEncryptionStore } from '@/stores/noteEncryption'
 
 export interface DocumentTab {
   noteId: string
   title: string
+}
+
+/** Closing a workspace tab drops that note's in-memory DEK (switching tabs does not). */
+function lockClosedNote(noteId: string) {
+  useNoteEncryptionStore.getState().lockNote(noteId)
 }
 
 interface PersistedWorkspace {
@@ -87,6 +93,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
       set({ activeView: 'home' })
       return
     }
+    let droppedId: string | null = null
     set((state) => {
       const existing = state.tabs.find((t) => t.noteId === noteId)
       let tabs = existing
@@ -97,11 +104,15 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
 
       if (!existing && tabs.length > MAX_TABS) {
         const dropIndex = tabs.findIndex((t) => t.noteId !== noteId)
-        tabs = tabs.filter((_, i) => i !== dropIndex)
+        if (dropIndex >= 0) {
+          droppedId = tabs[dropIndex]?.noteId ?? null
+          tabs = tabs.filter((_, i) => i !== dropIndex)
+        }
       }
 
       return { tabs, activeView: noteId }
     })
+    if (droppedId) lockClosedNote(droppedId)
   },
 
   closeTab: (noteId) => {
@@ -109,6 +120,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
     const nextTabs = tabs.filter((t) => t.noteId !== noteId)
     if (activeView !== noteId) {
       set({ tabs: nextTabs })
+      lockClosedNote(noteId)
       return
     }
     const closedIndex = tabs.findIndex((t) => t.noteId === noteId)
@@ -117,6 +129,7 @@ export const useWorkspaceTabsStore = create<WorkspaceTabsState>((set, get) => ({
       nextTabs[closedIndex - 1]?.noteId ??
       'home'
     set({ tabs: nextTabs, activeView: fallback })
+    lockClosedNote(noteId)
   },
 
   goHome: () => set({ activeView: 'home' }),

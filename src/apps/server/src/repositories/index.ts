@@ -3,6 +3,7 @@ export { noteRepository, NoteRepository, type NoteFilters } from './note.reposit
 export { folderRepository, FolderRepository } from './folder.repository.js'
 export { tagRepository, TagRepository, type TagWithCount } from './tag.repository.js'
 export { shareRepository, ShareRepository } from './share.repository.js'
+export { noteShareLinkRepository, NoteShareLinkRepository } from './note-share-link.repository.js'
 export { refreshTokenRepository, RefreshTokenRepository, type RefreshToken, type SessionInfo } from './refresh-token.repository.js'
 export { loginAttemptRepository, LoginAttemptRepository, type LoginAttempt } from './login-attempt.repository.js'
 export { statsRepository, StatsRepository, type DailyStat } from './stats.repository.js'

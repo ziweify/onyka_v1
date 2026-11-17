@@ -10,6 +10,7 @@ import { TwoFactorError } from '../services/two-factor.service.js'
 import { EmailVerificationError } from '../services/email-verification.service.js'
 import { ExportServiceError } from '../services/export.service.js'
 import { SparksServiceError } from '../services/sparks.service.js'
+import { NoteShareLinkServiceError } from '../services/note-share-link.service.js'
 import { logger } from '../utils/logger.js'
 
 export class AppError extends Error {
@@ -132,6 +133,17 @@ export function errorHandler(err: Error, req: Request, res: Response, _next: Nex
   }
 
   if (err instanceof SparksServiceError) {
+    return res.status(err.statusCode).json({
+      error: {
+        code: err.code,
+        message: err.message,
+      },
+      timestamp: new Date().toISOString(),
+      path: req.path,
+    })
+  }
+
+  if (err instanceof NoteShareLinkServiceError) {
     return res.status(err.statusCode).json({
       error: {
         code: err.code,

@@ -170,6 +170,36 @@ export const shares = sqliteTable(
   ]
 )
 
+/** External read links for unregistered guests (separate from user-to-user shares). */
+export const noteShareLinks = sqliteTable(
+  'note_share_links',
+  {
+    id: text('id').primaryKey(),
+    token: text('token').notNull().unique(),
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    permission: text('permission', { enum: ['view', 'edit'] }).notNull().default('view'),
+    passwordHash: text('password_hash'),
+    expiresAt: integer('expires_at', { mode: 'timestamp' }),
+    maxViews: integer('max_views'),
+    viewCount: integer('view_count').notNull().default(0),
+    label: text('label'),
+    status: text('status', { enum: ['active', 'revoked'] }).notNull().default('active'),
+    lastAccessedAt: integer('last_accessed_at', { mode: 'timestamp' }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('note_share_links_note_idx').on(table.noteId),
+    index('note_share_links_owner_idx').on(table.ownerId),
+    index('note_share_links_token_idx').on(table.token),
+  ]
+)
+
 export const refreshTokens = sqliteTable(
   'refresh_tokens',
   {

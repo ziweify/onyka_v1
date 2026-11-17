@@ -11,6 +11,9 @@ const HomePage = lazy(() => import('@/pages/HomePage').then((m) => ({ default: m
 const AdminPage = lazy(() => import('@/pages/AdminPage').then((m) => ({ default: m.AdminPage })))
 const VerifyEmailPage = lazy(() => import('@/pages/VerifyEmailPage').then((m) => ({ default: m.VerifyEmailPage })))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })))
+const SharedNotePage = lazy(() =>
+  import('@/pages/SharedNotePage').then((m) => ({ default: m.SharedNotePage }))
+)
 
 
 function LoadingSpinner() {
@@ -92,6 +95,7 @@ export function App() {
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/s/:token" element={<SharedNotePage />} />
 
               <Route
                 path="/"

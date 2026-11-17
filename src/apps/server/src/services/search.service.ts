@@ -72,7 +72,13 @@ export class SearchService {
     const insertMany = rawDb.transaction((notesToIndex: Note[]) => {
       for (const note of notesToIndex) {
         if (!note.isDeleted) {
-          stmt.run(note.title, this.extractTextContent(note.content), note.id, note.ownerId)
+          // Titles arrive already server-decrypted via noteRepository.mapToNote.
+          // Client-E2E bodies (ONYKAENC1) must not be indexed as prose.
+          const body =
+            note.isEncrypted || note.content.startsWith('ONYKAENC1.')
+              ? ''
+              : this.extractTextContent(note.content)
+          stmt.run(note.title, body, note.id, note.ownerId)
         }
       }
     })

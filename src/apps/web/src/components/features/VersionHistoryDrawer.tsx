@@ -23,6 +23,8 @@ interface VersionHistoryDrawerProps {
   noteTitle: string
   currentPageTitle: string
   currentContent: string
+  /** When true, version bodies may be ONYKAENC1 ciphertext and need the note DEK. */
+  isEncrypted?: boolean
   canEdit: boolean
   onRestored: (page: NotePage, noteTitle?: string) => void
 }
@@ -71,6 +73,7 @@ export function VersionHistoryDrawer({
   noteTitle,
   currentPageTitle,
   currentContent,
+  isEncrypted = false,
   canEdit,
   onRestored,
 }: VersionHistoryDrawerProps) {
@@ -155,7 +158,7 @@ export function VersionHistoryDrawer({
     ;(async () => {
       try {
         const { version } = await pagesApi.getVersion(selectedId)
-        const content = await openNoteContent(noteId, version.content, false)
+        const content = await openNoteContent(noteId, version.content, isEncrypted)
         if (!cancelled) setDetail({ ...version, content })
       } catch {
         if (!cancelled) setDetail(null)
@@ -164,7 +167,7 @@ export function VersionHistoryDrawer({
     return () => {
       cancelled = true
     }
-  }, [isOpen, selectedId, noteId])
+  }, [isOpen, selectedId, noteId, isEncrypted])
 
   useEffect(() => {
     if (!isOpen || !compareId || panelMode !== 'diff') {
@@ -175,7 +178,7 @@ export function VersionHistoryDrawer({
     ;(async () => {
       try {
         const { version } = await pagesApi.getVersion(compareId)
-        const content = await openNoteContent(noteId, version.content, false)
+        const content = await openNoteContent(noteId, version.content, isEncrypted)
         if (!cancelled) setCompareDetail({ ...version, content })
       } catch {
         if (!cancelled) setCompareDetail(null)
@@ -184,7 +187,7 @@ export function VersionHistoryDrawer({
     return () => {
       cancelled = true
     }
-  }, [isOpen, compareId, panelMode, noteId])
+  }, [isOpen, compareId, panelMode, noteId, isEncrypted])
 
   const diffLines = useMemo(() => {
     if (panelMode !== 'diff' || !detail) return []

@@ -16,13 +16,22 @@ import {
   IoShieldOutline,
   IoDocumentTextOutline,
   IoPhonePortraitOutline,
+  IoLinkOutline,
 } from 'react-icons/io5'
 import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, pointerWithin, useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 import { ThemeToggle, AccentColorPicker, SparkIcon } from '@/components/ui'
-import { ConfirmDialog, SettingsModal, ProfileEditModal, ImportDialog, SessionsDialog, NoteLockDialog } from '@/components/features'
+import {
+  ConfirmDialog,
+  SettingsModal,
+  ProfileEditModal,
+  ImportDialog,
+  SessionsDialog,
+  NoteLockDialog,
+  ShareLinksManagerDialog,
+} from '@/components/features'
 import { sessionsApi, notesApi, pagesApi } from '@/services/api'
 import { encryptPlaintext } from '@/utils/noteCrypto'
 import { useNoteEncryptionStore } from '@/stores/noteEncryption'
@@ -234,6 +243,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showSessions, setShowSessions] = useState(false)
+  const [showShareLinks, setShowShareLinks] = useState(false)
   const [sessionCount, setSessionCount] = useState<number | null>(null)
   const [lockTarget, setLockTarget] = useState<{ id: string; title: string } | null>(null)
   const unlockNoteSession = useNoteEncryptionStore((s) => s.unlock)
@@ -1342,6 +1352,18 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
           )}
         </button>
 
+        <button
+          type="button"
+          onClick={() => setShowShareLinks(true)}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left bg-[var(--color-bg-tertiary)]/60 hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          title={t('link_share.manage_title')}
+        >
+          <IoLinkOutline className="w-4 h-4 flex-shrink-0 text-[var(--color-accent)]" />
+          <span className="text-xs text-[var(--color-text-secondary)] truncate flex-1">
+            {t('link_share.manage_title')}
+          </span>
+        </button>
+
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
@@ -1751,6 +1773,10 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
           refreshSessionCount()
         }}
         onSessionsChanged={refreshSessionCount}
+      />
+      <ShareLinksManagerDialog
+        isOpen={showShareLinks}
+        onClose={() => setShowShareLinks(false)}
       />
       <NoteLockDialog
         isOpen={lockTarget != null}

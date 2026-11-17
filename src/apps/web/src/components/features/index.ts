@@ -1,4 +1,6 @@
 export { ShareDialog } from './ShareDialog'
+export { NoteLinkShareDialog } from './NoteLinkShareDialog'
+export { ShareLinksManagerDialog } from './ShareLinksManagerDialog'
 export { TagInput, TagBadge } from './TagInput'
 export { ConfirmDialog } from './ConfirmDialog'
 export { SettingsModal } from './SettingsModal'

@@ -20,6 +20,7 @@ import {
   IoLogoMarkdown,
   IoListOutline,
   IoAttachOutline,
+  IoLinkOutline,
 } from 'react-icons/io5'
 import type { Editor } from '@tiptap/react'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
@@ -35,7 +36,15 @@ import { DocumentOutline } from './DocumentOutline'
 import { NoteAttachmentsPanel } from './NoteAttachmentsPanel'
 import { PageTabs } from './PageTabs'
 import { useWorkspaceTabsStore } from '@/stores/workspaceTabs'
-import { ShareDialog, TagInput, NoteComments, ExportDialog, VersionHistoryDrawer, NoteLockDialog } from '@/components/features'
+import {
+  ShareDialog,
+  NoteLinkShareDialog,
+  TagInput,
+  NoteComments,
+  ExportDialog,
+  VersionHistoryDrawer,
+  NoteLockDialog,
+} from '@/components/features'
 import { ThemeToggle } from '@/components/ui'
 import { notesApi, sharesApi, pagesApi, attachmentsApi } from '@/services/api'
 import { useTagsStore } from '@/stores/tags'
@@ -115,12 +124,15 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const wordCountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [showLinkShareDialog, setShowLinkShareDialog] = useState(false)
   const [showCommentsPanel, setShowCommentsPanel] = useState(false)
   const [showExportDialog, setShowExportDialog] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
   const [showUnlockDialog, setShowUnlockDialog] = useState(false)
   const [cryptoRemountKey, setCryptoRemountKey] = useState(0)
   const contentLoadGenRef = useRef(0)
+  /** Last ciphertext (or raw) we already opened into localContent — skip redundant decrypts. */
+  const lastOpenedRawRef = useRef<string | null>(null)
   const noteEncryptedRef = useRef(Boolean(note.isEncrypted))
   const unlockNoteSession = useNoteEncryptionStore((s) => s.unlock)
   const lockNoteSession = useNoteEncryptionStore((s) => s.lockNote)
@@ -136,6 +148,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const scrubDecryptedPlaintext = useCallback(() => {
     if (!note.isEncrypted) return
     contentLoadGenRef.current += 1
+    lastOpenedRawRef.current = null
     setLocalContent('')
     localContentRef.current = ''
     lastSavedRef.current = { title: lastSavedRef.current.title, content: '' }
@@ -261,6 +274,9 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     }
     pendingUpdatesRef.current = {}
 
+    // Invalidate in-flight decrypts from the previous note before clearing UI state.
+    contentLoadGenRef.current += 1
+    lastOpenedRawRef.current = null
     setSyncedPageState({ noteId: note.id, pageId: null })
     setLocalContent(needsCryptoUnlock ? '' : note.content)
     setLocalTitle(note.title)
@@ -270,7 +286,9 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     setSyncedPageState({ noteId: note.id, pageId: activePage.id })
     lastActivePageIdRef.current = activePage.id
     const gen = ++contentLoadGenRef.current
-    void openNoteContent(note.id, activePage.content, Boolean(note.isEncrypted)).then((plain) => {
+    const raw = activePage.content
+    lastOpenedRawRef.current = raw
+    void openNoteContent(note.id, raw, Boolean(note.isEncrypted)).then((plain) => {
       if (contentLoadGenRef.current !== gen) return
       setLocalContent(plain)
       localContentRef.current = plain
@@ -351,6 +369,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
     isEditingRef.current = false
     lastActivePageIdRef.current = null
     savingContentRef.current = null
+    contentLoadGenRef.current += 1
+    lastOpenedRawRef.current = null
     noteEncryptedRef.current = Boolean(note.isEncrypted)
     lastSavedRef.current = { title: note.title, content: '' }
     setShowUnlockDialog(Boolean(note.isEncrypted && !useNoteEncryptionStore.getState().hasSession(note.id)))
@@ -364,6 +384,8 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   // Sync local content with active page (decrypt client-side when locked note is unlocked)
   useEffect(() => {
     if (needsCryptoUnlock) {
+      contentLoadGenRef.current += 1
+      lastOpenedRawRef.current = null
       setLocalContent('')
       localContentRef.current = ''
       return
@@ -371,6 +393,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
 
     const apply = (raw: string) => {
       const gen = ++contentLoadGenRef.current
+      lastOpenedRawRef.current = raw
       void openNoteContent(note.id, raw, Boolean(note.isEncrypted)).then((plain) => {
         if (contentLoadGenRef.current !== gen) return
         setLocalContent(plain)
@@ -391,16 +414,15 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
       // Compare against sealed/raw server payload via savingContentRef, or skip while editing
       if (savingContentRef.current !== null && activePage.content === savingContentRef.current) return
       if (isEditingRef.current) return
-      // Avoid re-decrypt loop: if plaintext already matches lastSaved, skip when server still has ciphertext
+      // Plaintext page: skip if unchanged
       if (!isEncryptedPayload(activePage.content) && activePage.content === lastSavedRef.current.content) return
-      if (isEncryptedPayload(activePage.content) && lastSavedRef.current.content && !isEditingRef.current) {
-        // Only re-apply when ciphertext actually changed
+      // Ciphertext page: only decrypt when the sealed payload actually changed
+      if (isEncryptedPayload(activePage.content)) {
+        if (lastOpenedRawRef.current === activePage.content && lastSavedRef.current.content) return
         apply(activePage.content)
         return
       }
-      if (!isEncryptedPayload(activePage.content)) {
-        apply(activePage.content)
-      }
+      apply(activePage.content)
     } else {
       if (!pagesLoaded) return
       if (!isEditingRef.current) apply(note.content)
@@ -1206,6 +1228,17 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     <span className="text-xs font-medium hidden sm:inline">{t('share.title')}</span>
                   )}
                 </button>
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setShowLinkShareDialog(true)}
+                    className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-all duration-150"
+                    title={t('link_share.title')}
+                  >
+                    <IoLinkOutline className="w-4 h-4" />
+                    <span className="text-xs font-medium hidden sm:inline">{t('link_share.short')}</span>
+                  </button>
+                )}
               </>
             )}
 
@@ -1251,6 +1284,18 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                             <span className="ml-auto text-xs font-medium text-[var(--color-accent)]">{collaboratorCount}</span>
                           )}
                         </button>
+                        {isOwner && (
+                          <button
+                            onClick={() => {
+                              setShowOptionsMenu(false)
+                              setShowLinkShareDialog(true)
+                            }}
+                            className="w-full flex items-center gap-2 px-3 h-9 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                          >
+                            <IoLinkOutline className="w-4 h-4" />
+                            <span>{t('link_share.title')}</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setShowOptionsMenu(false)
@@ -1555,6 +1600,14 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         resourceTitle={localTitle}
       />
 
+      <NoteLinkShareDialog
+        isOpen={showLinkShareDialog}
+        onClose={() => setShowLinkShareDialog(false)}
+        noteId={note.id}
+        noteTitle={localTitle || note.title}
+        isEncrypted={Boolean(note.isEncrypted)}
+      />
+
       <NoteComments
         noteId={note.id}
         isOwner={isOwner}
@@ -1578,6 +1631,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         noteTitle={localTitle}
         currentPageTitle={activePage?.title ?? localTitle}
         currentContent={localContent}
+        isEncrypted={Boolean(note.isEncrypted)}
         canEdit={canEdit && !isPageLocked && !needsCryptoUnlock}
         onRestored={handleVersionRestored}
       />
@@ -1591,7 +1645,10 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
         onUnlocked={async (dek, meta) => {
           unlockNoteSession(note.id, dek, meta)
           const raw = activePage?.content ?? note.content
+          const gen = ++contentLoadGenRef.current
+          lastOpenedRawRef.current = raw
           const plain = await openNoteContent(note.id, raw, true)
+          if (contentLoadGenRef.current !== gen) return
           setLocalContent(plain)
           localContentRef.current = plain
           lastSavedRef.current = { title: note.title, content: plain }

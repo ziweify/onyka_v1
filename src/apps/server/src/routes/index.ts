@@ -16,6 +16,10 @@ import uploadsRoutes from './uploads.routes.js'
 import attachmentsRoutes from './attachments.routes.js'
 import noteAttachmentsRoutes from './note-attachments.routes.js'
 import exportRoutes from './export.routes.js'
+import {
+  noteShareLinksRouter,
+  publicShareLinksRouter,
+} from './note-share-links.routes.js'
 
 const router: RouterType = Router()
 
@@ -25,6 +29,8 @@ router.use('/pages', pagesRoutes)
 router.use('/folders', foldersRoutes)
 router.use('/tags', tagsRoutes)
 router.use('/shares', sharesRoutes)
+router.use('/share-links', noteShareLinksRouter)
+router.use('/public/share-links', publicShareLinksRouter)
 router.use('/settings', settingsRoutes)
 router.use('/stats', statsRoutes)
 router.use('/recaps', recapsRoutes)

@@ -21,6 +21,12 @@ import type {
   ShareCreateInput,
   Permission,
   Collaborator,
+  NoteShareLink,
+  NoteShareLinkWithNote,
+  NoteShareLinkCreateInput,
+  NoteShareLinkUpdateInput,
+  PublicShareLinkMeta,
+  PublicShareContent,
   StatsOverview,
   StatsPeriod,
   WeeklyRecap,
@@ -495,6 +501,47 @@ export const sharesApi = {
     request<{ success: boolean }>(`/shares/${shareId}`, {
       method: 'DELETE',
     }),
+}
+
+export const shareLinksApi = {
+  listMine: () => request<{ links: NoteShareLinkWithNote[] }>('/share-links'),
+
+  listForNote: (noteId: string) =>
+    request<{ links: NoteShareLink[] }>(`/share-links/note/${noteId}`),
+
+  create: (noteId: string, data: NoteShareLinkCreateInput) =>
+    request<{ link: NoteShareLink }>(`/share-links/note/${noteId}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: string, data: NoteShareLinkUpdateInput) =>
+    request<{ link: NoteShareLink }>(`/share-links/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  revoke: (id: string) =>
+    request<{ success: boolean }>(`/share-links/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getPublicMeta: async (token: string) => {
+    const res = await fetch(`${API_BASE}/public/share-links/${encodeURIComponent(token)}`, {
+      credentials: 'include',
+    })
+    return handleResponse<{ meta: PublicShareLinkMeta }>(res)
+  },
+
+  openPublic: async (token: string, password?: string) => {
+    const res = await fetch(`${API_BASE}/public/share-links/${encodeURIComponent(token)}/open`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+    return handleResponse<{ content: PublicShareContent; accessToken: string }>(res)
+  },
 }
 
 export interface UserSearchResult {

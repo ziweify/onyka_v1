@@ -83,6 +83,8 @@ export const notes = sqliteTable(
     /** Client-side E2E lock; server only stores ciphertext + opaque meta (no passphrase). */
     isEncrypted: integer('is_encrypted', { mode: 'boolean' }).notNull().default(false),
     encryptionMeta: text('encryption_meta'),
+    /** Last time the note was opened (does not bump updatedAt). */
+    lastAccessedAt: integer('last_accessed_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },
@@ -90,6 +92,26 @@ export const notes = sqliteTable(
     index('notes_owner_idx').on(table.ownerId),
     index('notes_folder_idx').on(table.folderId),
     index('notes_folder_position_idx').on(table.folderId, table.position),
+  ]
+)
+
+/** Per-open access history for notes (owner + collaborators). */
+export const noteAccessLogs = sqliteTable(
+  'note_access_logs',
+  {
+    id: text('id').primaryKey(),
+    noteId: text('note_id')
+      .notNull()
+      .references(() => notes.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    accessedAt: integer('accessed_at', { mode: 'timestamp' }).notNull(),
+  },
+  (table) => [
+    index('note_access_logs_note_idx').on(table.noteId),
+    index('note_access_logs_note_time_idx').on(table.noteId, table.accessedAt),
+    index('note_access_logs_user_idx').on(table.userId),
   ]
 )
 

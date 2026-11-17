@@ -360,6 +360,11 @@ export const notesApi = {
 
   get: (id: string) => request<{ note: NoteWithTags }>(`/notes/${id}`),
 
+  accessLogs: (id: string, limit = 50) =>
+    request<{ logs: import('@onyka/shared').NoteAccessLog[] }>(
+      `/notes/${encodeURIComponent(id)}/access-logs?limit=${limit}`
+    ),
+
   create: (data: NoteCreateInput) =>
     request<{ note: Note }>('/notes', {
       method: 'POST',

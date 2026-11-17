@@ -104,6 +104,7 @@ export class NoteRepository {
       folderId,
       ownerId,
       isDeleted: false,
+      lastAccessedAt: now,
       createdAt: now,
       updatedAt: now,
     })
@@ -120,9 +121,15 @@ export class NoteRepository {
       deletedAt: null,
       isEncrypted: false,
       encryptionMeta: null,
+      lastAccessedAt: now,
       createdAt: now,
       updatedAt: now,
     }
+  }
+
+  /** Update lastAccessedAt without touching updatedAt. */
+  async touchLastAccessed(id: string, at: Date = new Date()): Promise<void> {
+    await db.update(notes).set({ lastAccessedAt: at }).where(eq(notes.id, id))
   }
 
   async update(id: string, input: NoteUpdateInput): Promise<Note | null> {
@@ -398,6 +405,7 @@ export class NoteRepository {
       deletedAt: row.deletedAt,
       isEncrypted: row.isEncrypted ?? false,
       encryptionMeta,
+      lastAccessedAt: row.lastAccessedAt ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     }

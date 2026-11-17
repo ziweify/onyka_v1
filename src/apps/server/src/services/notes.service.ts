@@ -1,4 +1,5 @@
 import { noteRepository, type NoteFilters } from '../repositories/note.repository.js'
+import { noteAccessRepository } from '../repositories/note-access.repository.js'
 import { shareRepository } from '../repositories/share.repository.js'
 import { tagRepository } from '../repositories/tag.repository.js'
 import { userRepository } from '../repositories/user.repository.js'
@@ -7,7 +8,14 @@ import { noteAttachmentRepository } from '../repositories/note-attachment.reposi
 import { searchService, type SearchResult } from './search.service.js'
 import { statsService } from './stats.service.js'
 import { logger } from '../utils/index.js'
-import type { Note, NoteCreateInput, NoteUpdateInput, NoteWithTags, Permission } from '@onyka/shared'
+import type {
+  Note,
+  NoteAccessLog,
+  NoteCreateInput,
+  NoteUpdateInput,
+  NoteWithTags,
+  Permission,
+} from '@onyka/shared'
 
 export class NotesServiceError extends Error {
   constructor(
@@ -54,7 +62,32 @@ export class NotesService {
       throw new NotesServiceError('Access denied', 'ACCESS_DENIED', 403)
     }
 
+    // Record open without bumping updatedAt
+    try {
+      const { at } = await noteAccessRepository.recordAccess(noteId, userId)
+      await noteRepository.touchLastAccessed(noteId, at)
+      note.lastAccessedAt = at
+    } catch (err) {
+      logger.warn('Failed to record note access', {
+        noteId,
+        userId,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+
     return note
+  }
+
+  async listAccessLogs(noteId: string, userId: string, limit = 50): Promise<NoteAccessLog[]> {
+    const note = await noteRepository.findById(noteId)
+    if (!note) {
+      throw new NotesServiceError('Note not found', 'NOTE_NOT_FOUND', 404)
+    }
+    const hasAccess = await this.checkAccess(noteId, note.ownerId, userId, 'read')
+    if (!hasAccess) {
+      throw new NotesServiceError('Access denied', 'ACCESS_DENIED', 403)
+    }
+    return noteAccessRepository.listByNoteId(noteId, limit)
   }
 
   async list(userId: string, filters: NoteFilters = {}): Promise<Note[]> {

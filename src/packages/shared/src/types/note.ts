@@ -22,8 +22,20 @@ export interface Note {
   /** When true, content/pages are client-encrypted ciphertext. */
   isEncrypted: boolean
   encryptionMeta: NoteEncryptionMeta | null
+  /** Last time this note was opened; null if never tracked. */
+  lastAccessedAt: Date | null
   createdAt: Date
   updatedAt: Date
+}
+
+/** One row in a note's open/access history. */
+export interface NoteAccessLog {
+  id: string
+  noteId: string
+  userId: string
+  username: string
+  name?: string
+  accessedAt: Date
 }
 
 export interface NoteWithTags extends Note {

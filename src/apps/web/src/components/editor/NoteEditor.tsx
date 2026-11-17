@@ -21,6 +21,7 @@ import {
   IoListOutline,
   IoAttachOutline,
   IoLinkOutline,
+  IoEyeOutline,
 } from 'react-icons/io5'
 import type { Editor } from '@tiptap/react'
 import type { NoteWithTags, Tag, NotePage } from '@onyka/shared'
@@ -44,6 +45,7 @@ import {
   ExportDialog,
   VersionHistoryDrawer,
   NoteLockDialog,
+  NoteAccessHistoryDialog,
 } from '@/components/features'
 import { ThemeToggle } from '@/components/ui'
 import { notesApi, sharesApi, pagesApi, attachmentsApi } from '@/services/api'
@@ -199,6 +201,7 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
   const pendingAnchorRef = useRef<string | null>(null)
   const { openNote } = useWorkspaceTabsStore()
   const [noteInfoExpanded, setNoteInfoExpanded] = useState(false)
+  const [showAccessHistory, setShowAccessHistory] = useState(false)
   const [collaboratorCount, setCollaboratorCount] = useState(0)
   const optionsMenuRef = useRef<HTMLDivElement>(null)
 
@@ -919,38 +922,71 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
                     <NotePathBreadcrumb segments={structurePath} className="flex-1" />
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-[11px] text-[var(--color-text-tertiary)] font-medium whitespace-nowrap overflow-hidden">
-                <span>{formatNoteDate(note.createdAt, i18n.language)}</span>
-                <span className="opacity-30">·</span>
-                <span>{displayWordCount} {t('editor.info_words').toLowerCase()}</span>
-                {attachmentCount > 0 && (
-                  <>
-                    <span className="opacity-30">·</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
-                      }
-                      className="inline-flex items-center gap-0.5 hover:text-[var(--color-text-secondary)] transition-colors"
-                      title={t('attachments.title')}
-                    >
-                      <IoAttachOutline className="w-3 h-3" />
-                      {attachmentCount}
-                    </button>
-                  </>
-                )}
-                {!isCompact && (
-                  <>
-                    <span className="opacity-30">·</span>
-                    <button
-                      onClick={handlePageCreate}
-                      className="hover:text-[var(--color-text-secondary)] transition-colors"
-                      title={t('pages.add')}
-                    >
-                      + {t('pages.add')}
-                    </button>
-                  </>
-                )}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-[var(--color-text-tertiary)] font-medium">
+                  <span className="whitespace-nowrap" title={t('editor.info_created')}>
+                    {t('editor.info_created')}{' '}
+                    <span className="text-[var(--color-text-secondary)]">
+                      {formatNoteDate(note.createdAt, i18n.language)}
+                    </span>
+                  </span>
+                  <span className="opacity-30">·</span>
+                  <span className="whitespace-nowrap" title={t('editor.info_modified')}>
+                    {t('editor.info_modified')}{' '}
+                    <span className="text-[var(--color-text-secondary)]">
+                      {formatNoteDate(lastModifiedAt, i18n.language)}
+                    </span>
+                  </span>
+                  <span className="opacity-30">·</span>
+                  <span className="whitespace-nowrap" title={t('editor.info_accessed')}>
+                    {t('editor.info_accessed')}{' '}
+                    <span className="text-[var(--color-text-secondary)]">
+                      {note.lastAccessedAt
+                        ? formatNoteDate(note.lastAccessedAt, i18n.language)
+                        : t('editor.access_never')}
+                    </span>
+                  </span>
+                  <span className="opacity-30">·</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAccessHistory(true)}
+                    className="inline-flex items-center gap-0.5 hover:text-[var(--color-accent)] transition-colors whitespace-nowrap"
+                    title={t('editor.access_history')}
+                  >
+                    <IoEyeOutline className="w-3 h-3" />
+                    {t('editor.access_history')}
+                  </button>
+                  <span className="opacity-30">·</span>
+                  <span className="whitespace-nowrap">
+                    {displayWordCount} {t('editor.info_words').toLowerCase()}
+                  </span>
+                  {attachmentCount > 0 && (
+                    <>
+                      <span className="opacity-30">·</span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setRightPanelTab((tab) => (tab === 'attachments' ? null : 'attachments'))
+                        }
+                        className="inline-flex items-center gap-0.5 hover:text-[var(--color-text-secondary)] transition-colors"
+                        title={t('attachments.title')}
+                      >
+                        <IoAttachOutline className="w-3 h-3" />
+                        {attachmentCount}
+                      </button>
+                    </>
+                  )}
+                  {!isCompact && (
+                    <>
+                      <span className="opacity-30">·</span>
+                      <button
+                        onClick={handlePageCreate}
+                        className="hover:text-[var(--color-text-secondary)] transition-colors"
+                        title={t('pages.add')}
+                      >
+                        + {t('pages.add')}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -1570,6 +1606,10 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
             >
               <span className="whitespace-nowrap">{t('editor.info_created')} <span className="text-[var(--color-text-primary)]">{formatNoteDate(note.createdAt, i18n.language)}</span></span>
               <span className="opacity-30">·</span>
+              <span className="whitespace-nowrap">{t('editor.info_modified')} <span className="text-[var(--color-text-primary)]">{formatNoteDate(lastModifiedAt, i18n.language)}</span></span>
+              <span className="opacity-30">·</span>
+              <span className="whitespace-nowrap">{t('editor.info_accessed')} <span className="text-[var(--color-text-primary)]">{note.lastAccessedAt ? formatNoteDate(note.lastAccessedAt, i18n.language) : t('editor.access_never')}</span></span>
+              <span className="opacity-30">·</span>
               <span className="whitespace-nowrap"><span className="text-[var(--color-text-primary)]">{displayWordCount}</span> {t('editor.info_words').toLowerCase()}</span>
               {pages.length > 1 && (
                 <>
@@ -1591,6 +1631,12 @@ export function NoteEditor({ note, onUpdate, onDelete }: NoteEditorProps) {
           </div>
         )}
       </div>
+
+      <NoteAccessHistoryDialog
+        isOpen={showAccessHistory}
+        noteId={note.id}
+        onClose={() => setShowAccessHistory(false)}
+      />
 
       <ShareDialog
         isOpen={showShareDialog}

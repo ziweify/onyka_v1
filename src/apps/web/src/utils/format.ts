@@ -65,6 +65,19 @@ export function formatNoteDate(date: Date | string, locale: string): string {
   })
 }
 
+/** Short date + time for access history (e.g. "2026年11月18日 02:40"). */
+export function formatNoteDateTime(date: Date | string, locale: string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(d.getTime())) return '-'
+  return d.toLocaleString(getDateLocale(locale), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 /**
  * Get initials from a name (e.g., "John Doe" -> "JD")
  * Returns up to 2 characters

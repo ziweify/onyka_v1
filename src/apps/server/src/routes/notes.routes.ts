@@ -170,6 +170,16 @@ router.post('/', createNoteRateLimit, async (req, res, next) => {
   }
 })
 
+router.get('/:id/access-logs', async (req, res, next) => {
+  try {
+    const limit = req.query.limit ? Number(req.query.limit) : 50
+    const logs = await notesService.listAccessLogs(req.params.id, req.userId!, limit)
+    res.json({ logs })
+  } catch (error) {
+    next(error)
+  }
+})
+
 router.get('/:id', async (req, res, next) => {
   try {
     const note = await notesService.getById(req.params.id, req.userId!)

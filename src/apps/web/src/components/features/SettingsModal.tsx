@@ -8,8 +8,6 @@ import {
   IoCloseOutline,
   IoShieldCheckmarkOutline,
   IoColorPaletteOutline,
-  IoTrashOutline,
-  IoRefreshOutline,
   IoReloadOutline,
   IoInformationCircleOutline,
   IoTextOutline,
@@ -30,28 +28,23 @@ import {
   ACCENT_COLORS,
 } from '@/stores/theme'
 import { useStatsStore } from '@/stores/stats'
-import { useFoldersStore } from '@/stores/folders'
 import { toast } from '@/components/ui/Toast'
-import { notesApi, ApiException } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { setLanguageWithServer, getCurrentLanguage } from '@/i18n'
 import { ConfirmDialog, StatsPanel } from '@/components/features'
 import { replayOnboarding } from '@/components/features/OnboardingModal'
 import { ThemeBasePicker } from '@/components/ui/ThemeBasePicker'
-import {
-  isSensitiveReauthValid,
-  markSensitiveReauth,
-} from '@/utils/sensitiveReauth'
-import type { Note, Language } from '@onyka/shared'
+import type { Language } from '@onyka/shared'
+
+export type SettingsTab = 'appearance' | 'editor' | 'shortcuts' | 'data' | 'security' | 'about'
 
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
+  initialTab?: SettingsTab
 }
 
-type SettingsTab = 'appearance' | 'editor' | 'shortcuts' | 'data' | 'security' | 'about'
-
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, initialTab }: SettingsModalProps) {
   const { t } = useTranslation()
   const focusTrapRef = useFocusTrap(isOpen)
   const { settings, isLoading, fetchSettings, updateSettings } = useSettingsStore()
@@ -68,25 +61,15 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     setEditorFontFamily,
   } = useThemeStore()
   const { trackingEnabled, trackingLoaded, fetchTrackingEnabled, setTrackingEnabled } = useStatsStore()
-  const { fetchFolderTree } = useFoldersStore()
   const { user } = useAuthStore()
   const isAdmin = user?.role === 'admin'
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('appearance')
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab ?? 'appearance')
   const [direction, setDirection] = useState(0)
   const navRef = useRef<HTMLDivElement>(null)
   const [indicatorStyle, setIndicatorStyle] = useState({ top: 0, height: 0 })
   const [currentLang, setCurrentLang] = useState<Language>(getCurrentLanguage())
   const [isUpdatingTracking, setIsUpdatingTracking] = useState(false)
-
-  const [deletedNotes, setDeletedNotes] = useState<Note[]>([])
-  const [isLoadingTrash, setIsLoadingTrash] = useState(false)
-  const [restoringId, setRestoringId] = useState<string | null>(null)
-  const [showEmptyTrashDialog, setShowEmptyTrashDialog] = useState(false)
-  const [isEmptyingTrash, setIsEmptyingTrash] = useState(false)
-  const [trashPassword, setTrashPassword] = useState('')
-  const [trashPasswordError, setTrashPasswordError] = useState<string | null>(null)
-  const [needsTrashPassword, setNeedsTrashPassword] = useState(true)
   const [showDisableTrackingDialog, setShowDisableTrackingDialog] = useState(false)
 
   const tabs: { id: SettingsTab; icon: React.ElementType; label: string }[] = [
@@ -100,11 +83,12 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   useEffect(() => {
     if (isOpen) {
+      setActiveTab(initialTab ?? 'appearance')
+      setDirection(0)
       fetchSettings()
-      fetchDeletedNotes()
       fetchTrackingEnabled()
     }
-  }, [isOpen, fetchSettings, fetchTrackingEnabled])
+  }, [isOpen, initialTab, fetchSettings, fetchTrackingEnabled])
 
   useEffect(() => {
     if (!navRef.current) return
@@ -129,84 +113,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, onClose])
-
-  const fetchDeletedNotes = async () => {
-    setIsLoadingTrash(true)
-    try {
-      const { notes } = await notesApi.list({ deleted: true })
-      setDeletedNotes(notes)
-    } catch {
-      // Silently fail
-    } finally {
-      setIsLoadingTrash(false)
-    }
-  }
-
-  const handleRestoreNote = async (noteId: string) => {
-    const noteToRestore = deletedNotes.find((n) => n.id === noteId)
-    setDeletedNotes((prev) => prev.filter((n) => n.id !== noteId))
-    setRestoringId(noteId)
-
-    try {
-      await notesApi.restore(noteId)
-      fetchFolderTree()
-      toast.success(t('settings.trash.restored'))
-    } catch {
-      if (noteToRestore) {
-        setDeletedNotes((prev) => [...prev, noteToRestore])
-      }
-      toast.error(t('settings.trash.restore_error'))
-    } finally {
-      setRestoringId(null)
-    }
-  }
-
-  const openEmptyTrashDialog = () => {
-    const needPw = !isSensitiveReauthValid()
-    setNeedsTrashPassword(needPw)
-    setTrashPassword('')
-    setTrashPasswordError(null)
-    setShowEmptyTrashDialog(true)
-  }
-
-  const handleEmptyTrash = async () => {
-    if (needsTrashPassword && !trashPassword.trim()) {
-      setTrashPasswordError(t('settings.trash.password_required'))
-      return
-    }
-    setIsEmptyingTrash(true)
-    setTrashPasswordError(null)
-    try {
-      const result = await notesApi.emptyTrash(
-        needsTrashPassword ? trashPassword : undefined
-      )
-      if (result.reauthExpiresAt) markSensitiveReauth(result.reauthExpiresAt)
-      setDeletedNotes([])
-      setShowEmptyTrashDialog(false)
-      setTrashPassword('')
-      toast.success(t('settings.trash.emptied'))
-    } catch (err) {
-      if (err instanceof ApiException && err.code === 'INVALID_PASSWORD') {
-        setTrashPasswordError(t('settings.trash.password_incorrect'))
-      } else if (err instanceof ApiException && err.code === 'REAUTH_REQUIRED') {
-        setNeedsTrashPassword(true)
-        setTrashPasswordError(t('settings.trash.password_required'))
-      } else {
-        toast.error(t('settings.trash.empty_error'))
-        setShowEmptyTrashDialog(false)
-      }
-    } finally {
-      setIsEmptyingTrash(false)
-    }
-  }
-
-  const getDaysRemaining = (deletedAt: Date | null) => {
-    if (!deletedAt) return 30
-    const deleted = deletedAt instanceof Date ? deletedAt : new Date(deletedAt)
-    const now = new Date()
-    const diffMs = 30 * 24 * 60 * 60 * 1000 - (now.getTime() - deleted.getTime())
-    return Math.max(0, Math.ceil(diffMs / (24 * 60 * 60 * 1000)))
-  }
 
   const handleToggle = async (key: 'authDisabled' | 'allowRegistration', value: boolean) => {
     try {
@@ -573,65 +479,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                       </SettingRow>
 
                       {trackingEnabled && <StatsPanel />}
-
-                      <SettingSection
-                        title={t('settings.trash.title')}
-                        description={t('settings.trash.description')}
-                        icon={IoTrashOutline}
-                        action={
-                          deletedNotes.length > 0 ? (
-                            <button
-                              onClick={openEmptyTrashDialog}
-                              className="text-sm text-[var(--color-error)] hover:text-[var(--color-error)]/80 transition-colors"
-                            >
-                              {t('settings.trash.empty')}
-                            </button>
-                          ) : undefined
-                        }
-                      >
-                        <div className="bg-[var(--color-bg-secondary)] rounded-xl overflow-hidden">
-                          {isLoadingTrash ? (
-                            <div className="flex items-center justify-center py-8">
-                              <IoReloadOutline className="w-5 h-5 animate-spin text-[var(--color-text-tertiary)]" />
-                            </div>
-                          ) : deletedNotes.length === 0 ? (
-                            <div className="text-center py-8 text-[var(--color-text-tertiary)]">
-                              <IoTrashOutline className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                              <p className="text-sm">{t('settings.trash.empty_state')}</p>
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-[var(--color-border-subtle)] max-h-48 overflow-y-auto">
-                              {deletedNotes.map((note) => (
-                                <div
-                                  key={note.id}
-                                  className="flex items-center justify-between gap-2 p-3 hover:bg-[var(--color-bg-tertiary)] transition-colors"
-                                >
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-[var(--color-text-primary)] truncate text-sm">
-                                      {note.title || t('editor.untitled')}
-                                    </p>
-                                    <p className="text-xs text-[var(--color-text-tertiary)]">
-                                      {t('settings.trash.days_remaining', { n: getDaysRemaining(note.deletedAt) })}
-                                    </p>
-                                  </div>
-                                  <button
-                                    onClick={() => handleRestoreNote(note.id)}
-                                    disabled={restoringId === note.id}
-                                    className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs sm:text-sm text-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-                                  >
-                                    {restoringId === note.id ? (
-                                      <IoReloadOutline className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <IoRefreshOutline className="w-4 h-4" />
-                                    )}
-                                    <span className="hidden sm:inline">{t('settings.trash.restore')}</span>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </SettingSection>
                     </motion.div>
                   )}
 
@@ -728,53 +575,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </div>
         </div>
       </div>
-
-      <ConfirmDialog
-        isOpen={showEmptyTrashDialog}
-        onClose={() => {
-          if (isEmptyingTrash) return
-          setShowEmptyTrashDialog(false)
-          setTrashPassword('')
-          setTrashPasswordError(null)
-        }}
-        onConfirm={handleEmptyTrash}
-        title={t('settings.trash.empty_confirm_title')}
-        message={t('settings.trash.empty_confirm_message', { count: deletedNotes.length })}
-        confirmLabel={t('settings.trash.empty')}
-        isLoading={isEmptyingTrash}
-      >
-        {needsTrashPassword ? (
-          <div className="mt-4 text-left space-y-2">
-            <label className="block text-xs text-[var(--color-text-secondary)]">
-              {t('settings.trash.password_label')}
-            </label>
-            <input
-              type="password"
-              autoFocus
-              value={trashPassword}
-              onChange={(e) => {
-                setTrashPassword(e.target.value)
-                setTrashPasswordError(null)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleEmptyTrash()
-              }}
-              placeholder={t('settings.trash.password_placeholder')}
-              className="w-full px-3 py-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-sm"
-            />
-            {trashPasswordError && (
-              <p className="text-xs text-[var(--color-error)]">{trashPasswordError}</p>
-            )}
-            <p className="text-[11px] text-[var(--color-text-tertiary)]">
-              {t('settings.trash.password_hint')}
-            </p>
-          </div>
-        ) : (
-          <p className="mt-3 text-xs text-[var(--color-text-tertiary)]">
-            {t('settings.trash.reauth_valid')}
-          </p>
-        )}
-      </ConfirmDialog>
 
       <ConfirmDialog
         isOpen={showDisableTrackingDialog}

@@ -17,6 +17,7 @@ import {
   IoDocumentTextOutline,
   IoPhonePortraitOutline,
   IoLinkOutline,
+  IoTrashOutline,
 } from 'react-icons/io5'
 import { Link } from 'react-router-dom'
 import { DndContext, DragOverlay, pointerWithin, useDroppable } from '@dnd-kit/core'
@@ -26,6 +27,7 @@ import { ThemeToggle, AccentColorPicker, SparkIcon } from '@/components/ui'
 import {
   ConfirmDialog,
   SettingsModal,
+  TrashDialog,
   ProfileEditModal,
   ImportDialog,
   SessionsDialog,
@@ -240,13 +242,22 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
   }, [showNewNoteInput])
 
   const [showSettings, setShowSettings] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [showSessions, setShowSessions] = useState(false)
   const [showShareLinks, setShowShareLinks] = useState(false)
   const [sessionCount, setSessionCount] = useState<number | null>(null)
+  const [trashCount, setTrashCount] = useState<number | null>(null)
   const [lockTarget, setLockTarget] = useState<{ id: string; title: string } | null>(null)
   const unlockNoteSession = useNoteEncryptionStore((s) => s.unlock)
+
+  const refreshTrashCount = useCallback(() => {
+    notesApi
+      .list({ deleted: true })
+      .then((res) => setTrashCount(res.notes.length))
+      .catch(() => setTrashCount(null))
+  }, [])
 
   const [deleteDialog, setDeleteDialog] = useState<{
     type: 'note' | 'folder' | 'mixed'
@@ -367,7 +378,8 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
 
   useEffect(() => {
     refreshSessionCount()
-  }, [refreshSessionCount])
+    refreshTrashCount()
+  }, [refreshSessionCount, refreshTrashCount])
 
   useEffect(() => {
     if (showNewNoteInput) {
@@ -739,6 +751,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
           clearAllSelection()
           fetchFolderTree()
           fetchTags()
+          refreshTrashCount()
           setDeleteDialog(null)
           setIsDeleting(false)
         }, 250)
@@ -757,6 +770,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             clearAllSelection()
             fetchFolderTree()
             fetchTags()
+            refreshTrashCount()
             setDeleteDialog(null)
             setIsDeleting(false)
           }, 250)
@@ -775,6 +789,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             })
             fetchFolderTree()
             fetchTags()
+            refreshTrashCount()
             setDeleteDialog(null)
             setIsDeleting(false)
           }, 250)
@@ -791,6 +806,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             clearAllSelection()
             fetchFolderTree()
             fetchTags()
+            refreshTrashCount()
             setDeleteDialog(null)
             setIsDeleting(false)
           }, 250)
@@ -806,6 +822,7 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
             })
             fetchFolderTree()
             fetchTags()
+            refreshTrashCount()
             setDeleteDialog(null)
             setIsDeleting(false)
           }, 250)
@@ -1364,6 +1381,23 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
           </span>
         </button>
 
+        <button
+          type="button"
+          onClick={() => setShowTrash(true)}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-left bg-[var(--color-bg-tertiary)]/60 hover:bg-[var(--color-bg-tertiary)] transition-colors"
+          title={t('settings.trash.title')}
+        >
+          <IoTrashOutline className="w-4 h-4 flex-shrink-0 text-[var(--color-accent)]" />
+          <span className="text-xs text-[var(--color-text-secondary)] truncate flex-1">
+            {t('settings.trash.title')}
+          </span>
+          {trashCount != null && trashCount > 0 && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-[var(--color-error)]/15 text-[var(--color-error)]">
+              {trashCount}
+            </span>
+          )}
+        </button>
+
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
@@ -1623,6 +1657,32 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
 
             <div
               className={`
+                relative group/trash
+                transition-all duration-300
+                ${sidebarCollapsed ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
+              `}
+              style={{ transitionDelay: sidebarCollapsed ? '540ms' : '0ms' }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowTrash(true)}
+                className="collapsed-icon-btn relative p-2 text-[var(--color-text-tertiary)] hover:text-[var(--color-error)] transition-colors duration-200"
+                aria-label={t('settings.trash.title')}
+              >
+                <IoTrashOutline className="w-5 h-5" />
+                {trashCount != null && trashCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 px-0.5 rounded-full bg-[var(--color-error)] text-white text-[9px] font-bold leading-3.5 flex items-center justify-center">
+                    {trashCount}
+                  </span>
+                )}
+              </button>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2.5 py-1 rounded-lg bg-[var(--color-bg-elevated)] border border-[var(--color-border-subtle)] shadow-lg text-xs font-medium text-[var(--color-text-primary)] whitespace-nowrap opacity-0 scale-95 pointer-events-none group-hover/trash:opacity-100 group-hover/trash:scale-100 transition-all duration-200 delay-150">
+                {t('settings.trash.title')}
+              </div>
+            </div>
+
+            <div
+              className={`
                 relative group/settings
                 transition-all duration-300
                 ${sidebarCollapsed ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
@@ -1764,7 +1824,18 @@ export function Sidebar({ onSelectNote, selectedNoteId, searchInputRef }: Sideba
         confirmLabel={t('common.delete')}
         isLoading={isDeleting}
       />
-      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
+      <TrashDialog
+        isOpen={showTrash}
+        onClose={() => {
+          setShowTrash(false)
+          refreshTrashCount()
+        }}
+        onChanged={refreshTrashCount}
+      />
       <ProfileEditModal isOpen={showProfile} onClose={() => setShowProfile(false)} />
       <SessionsDialog
         isOpen={showSessions}

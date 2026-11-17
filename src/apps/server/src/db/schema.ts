@@ -188,6 +188,7 @@ export const noteShareLinks = sqliteTable(
     maxViews: integer('max_views'),
     viewCount: integer('view_count').notNull().default(0),
     label: text('label'),
+    allowGuestComments: integer('allow_guest_comments', { mode: 'boolean' }).notNull().default(false),
     status: text('status', { enum: ['active', 'revoked'] }).notNull().default('active'),
     lastAccessedAt: integer('last_accessed_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -302,6 +303,9 @@ export const weeklyRecaps = sqliteTable(
   ]
 )
 
+/** Synthetic user id for anonymous share-link comments (disabled account). */
+export const SHARE_GUEST_USER_ID = '__onyka_share_guest__'
+
 export const noteComments = sqliteTable(
   'note_comments',
   {
@@ -312,6 +316,9 @@ export const noteComments = sqliteTable(
     userId: text('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    /** Set for anonymous comments posted via a public share link. */
+    guestName: text('guest_name'),
+    shareLinkId: text('share_link_id').references(() => noteShareLinks.id, { onDelete: 'set null' }),
     parentId: text('parent_id').references((): AnySQLiteColumn => noteComments.id, { onDelete: 'cascade' }),
     content: text('content').notNull(),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
@@ -321,6 +328,7 @@ export const noteComments = sqliteTable(
     index('note_comments_note_idx').on(table.noteId),
     index('note_comments_user_idx').on(table.userId),
     index('note_comments_parent_idx').on(table.parentId),
+    index('note_comments_share_link_idx').on(table.shareLinkId),
   ]
 )
 

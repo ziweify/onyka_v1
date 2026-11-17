@@ -20,7 +20,8 @@
     "no": "No",
     "more_options": "More options",
     "retry": "Retry",
-    "clear": "Clear"
+    "clear": "Clear",
+    "refresh": "Refresh"
   },
   "sidebar": {
     "notes": "Notes",
@@ -343,7 +344,23 @@
     "guest_revoked": "This link was revoked",
     "wrong_password": "Incorrect password",
     "countdown": "{{time}} left",
-    "remaining_views": "{{count}} opens left"
+    "remaining_views": "{{count}} opens left",
+    "allow_guest_comments": "Allow anonymous guest comments",
+    "allow_guest_comments_hint": "Anyone with the link can leave a note at the bottom. Off by default.",
+    "guest_comments_on": "Comments on",
+    "discussion": "Discussion",
+    "discussion_hint": "Comments stay out of the note body. The author sees them in the note’s comment panel.",
+    "guest_name_placeholder": "Nickname (optional)",
+    "guest_comment_placeholder": "Write a comment…",
+    "guest_author": "Guest · {{name}}",
+    "guest_badge_short": "Guest",
+    "replying": "Replying…",
+    "comments_load_failed": "Could not load comments",
+    "comments_post_failed": "Could not post comment",
+    "floor": "#{{n}}",
+    "op": "OP",
+    "replies_heading": "Replies · {{count}}",
+    "jump_replies": "View replies"
   },
   "versions": {
     "title": "Version history",
@@ -865,7 +882,8 @@
     "edited": "edited",
     "delete_confirm": "Are you sure you want to delete this comment?",
     "empty": "No comments yet",
-    "empty_hint": "Be the first to comment on this note"
+    "empty_hint": "Be the first to comment on this note",
+    "guest_badge": "Guest"
   },
   "sessions": {
     "title": "Active Sessions",

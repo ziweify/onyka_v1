@@ -12,6 +12,8 @@ export interface NoteShareLink {
   maxViews: number | null
   viewCount: number
   label: string | null
+  /** When true, visitors with a valid share-access token may post anonymous comments. */
+  allowGuestComments: boolean
   status: NoteShareLinkStatus
   lastAccessedAt: Date | null
   createdAt: Date
@@ -30,6 +32,7 @@ export interface NoteShareLinkCreateInput {
   expiresAt?: string | null
   maxViews?: number | null
   label?: string | null
+  allowGuestComments?: boolean
   /** P1: only view is accepted */
   permission?: NoteShareLinkPermission
 }
@@ -40,7 +43,16 @@ export interface NoteShareLinkUpdateInput {
   expiresAt?: string | null
   maxViews?: number | null
   label?: string | null
+  allowGuestComments?: boolean
   status?: NoteShareLinkStatus
+}
+
+/** Public author card shown on shared / forum-style pages. */
+export interface PublicShareAuthor {
+  username: string
+  name: string
+  avatarUrl?: string
+  avatarColor?: string
 }
 
 export interface PublicShareLinkMeta {
@@ -55,6 +67,8 @@ export interface PublicShareLinkMeta {
   remainingViews: number | null
   isExpired: boolean
   isExhausted: boolean
+  allowGuestComments: boolean
+  author: PublicShareAuthor
 }
 
 export interface PublicSharePage {
@@ -72,4 +86,8 @@ export interface PublicShareContent {
   maxViews: number | null
   viewCount: number
   remainingViews: number | null
+  allowGuestComments: boolean
+  author: PublicShareAuthor
+  /** Note updatedAt for floor-1 timestamp */
+  updatedAt: Date
 }

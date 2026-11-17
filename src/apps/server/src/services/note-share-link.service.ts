@@ -2,6 +2,7 @@ import { SignJWT, jwtVerify } from 'jose'
 import { noteShareLinkRepository } from '../repositories/note-share-link.repository.js'
 import { noteRepository } from '../repositories/note.repository.js'
 import { pageRepository } from '../repositories/page.repository.js'
+import { userRepository } from '../repositories/user.repository.js'
 import { passwordService } from './password.service.js'
 import { env } from '../config/env.js'
 import type {
@@ -9,6 +10,7 @@ import type {
   NoteShareLinkCreateInput,
   NoteShareLinkUpdateInput,
   NoteShareLinkWithNote,
+  PublicShareAuthor,
   PublicShareContent,
   PublicShareLinkMeta,
 } from '@onyka/shared'
@@ -38,6 +40,19 @@ function isExpired(expiresAt: Date | null): boolean {
 
 function isExhausted(maxViews: number | null, viewCount: number): boolean {
   return maxViews != null && viewCount >= maxViews
+}
+
+async function resolveAuthor(ownerId: string): Promise<PublicShareAuthor> {
+  const user = await userRepository.findById(ownerId)
+  if (!user) {
+    return { username: 'author', name: 'Author', avatarColor: 'blue' }
+  }
+  return {
+    username: user.username,
+    name: user.name || user.username,
+    avatarUrl: user.avatarUrl,
+    avatarColor: user.avatarColor,
+  }
 }
 
 export class NoteShareLinkService {
@@ -89,6 +104,7 @@ export class NoteShareLinkService {
       expiresAt,
       maxViews,
       label: input.label?.trim() || null,
+      allowGuestComments: Boolean(input.allowGuestComments),
     })
   }
 
@@ -135,6 +151,9 @@ export class NoteShareLinkService {
     if (input.label !== undefined) {
       patch.label = input.label?.trim() || null
     }
+    if (input.allowGuestComments !== undefined) {
+      patch.allowGuestComments = Boolean(input.allowGuestComments)
+    }
     if (input.status !== undefined) {
       patch.status = input.status
     }
@@ -163,6 +182,8 @@ export class NoteShareLinkService {
     const expired = isExpired(link.expiresAt)
     const exhausted = isExhausted(link.maxViews, link.viewCount)
 
+    const author = await resolveAuthor(note.ownerId)
+
     return {
       token: link.token,
       noteTitle: note.title,
@@ -175,6 +196,8 @@ export class NoteShareLinkService {
       remainingViews: remainingViews(link.maxViews, link.viewCount),
       isExpired: expired,
       isExhausted: exhausted,
+      allowGuestComments: link.allowGuestComments,
+      author,
     }
   }
 
@@ -236,6 +259,8 @@ export class NoteShareLinkService {
       ]
     }
 
+    const author = await resolveAuthor(note.ownerId)
+
     const content: PublicShareContent = {
       noteTitle: note.title,
       pages: pages.map((p) => ({
@@ -249,6 +274,9 @@ export class NoteShareLinkService {
       maxViews: link.maxViews,
       viewCount,
       remainingViews: remainingViews(link.maxViews, viewCount),
+      allowGuestComments: link.allowGuestComments,
+      author,
+      updatedAt: note.updatedAt,
     }
 
     const accessToken = await new SignJWT({
@@ -264,13 +292,40 @@ export class NoteShareLinkService {
     return { content, accessToken }
   }
 
-  async verifyAccessToken(token: string, accessToken: string): Promise<boolean> {
+  async verifyAccessToken(
+    token: string,
+    accessToken: string
+  ): Promise<{ ok: true; linkId: string } | { ok: false }> {
     try {
       const { payload } = await jwtVerify(accessToken, this.secret)
-      return payload.type === 'share-access' && payload.token === token
+      if (payload.type !== 'share-access' || payload.token !== token) {
+        return { ok: false }
+      }
+      const linkId = typeof payload.linkId === 'string' ? payload.linkId : null
+      if (!linkId) return { ok: false }
+      return { ok: true, linkId }
     } catch {
-      return false
+      return { ok: false }
     }
+  }
+
+  /** Resolve an opened share link for guest comment APIs. */
+  async requireOpenLink(token: string, accessToken: string) {
+    const verified = await this.verifyAccessToken(token, accessToken)
+    if (!verified.ok) {
+      throw new NoteShareLinkServiceError('Share access expired or invalid', 'SHARE_ACCESS_DENIED', 401)
+    }
+    const link = await noteShareLinkRepository.findByToken(token)
+    if (!link || link.id !== verified.linkId) {
+      throw new NoteShareLinkServiceError('Share link not found', 'LINK_NOT_FOUND', 404)
+    }
+    if (link.status !== 'active') {
+      throw new NoteShareLinkServiceError('Share link has been revoked', 'LINK_REVOKED', 410)
+    }
+    if (isExpired(link.expiresAt)) {
+      throw new NoteShareLinkServiceError('Share link has expired', 'LINK_EXPIRED', 410)
+    }
+    return link
   }
 }
 

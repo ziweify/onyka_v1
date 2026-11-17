@@ -4,6 +4,11 @@ export interface Comment {
   userId: string
   parentId: string | null
   content: string
+  /** Display nickname when posted anonymously via a share link. */
+  guestName: string | null
+  shareLinkId: string | null
+  /** True when authored by the synthetic share-guest account. */
+  isGuest: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -42,4 +47,12 @@ export interface CommentResponse {
 
 export interface CommentCountResponse {
   count: number
+}
+
+/** Public (share-link) guest comment create body. */
+export interface PublicGuestCommentCreateInput {
+  content: string
+  parentId?: string
+  /** Optional nickname shown as “访客 · name”. Max 40 chars. */
+  guestName?: string
 }

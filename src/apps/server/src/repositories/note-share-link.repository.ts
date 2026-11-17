@@ -27,6 +27,7 @@ function mapRow(row: typeof noteShareLinks.$inferSelect): NoteShareLink {
     maxViews: row.maxViews ?? null,
     viewCount: row.viewCount,
     label: row.label ?? null,
+    allowGuestComments: Boolean(row.allowGuestComments),
     status: row.status as NoteShareLinkStatus,
     lastAccessedAt: row.lastAccessedAt ?? null,
     createdAt: row.createdAt,
@@ -44,6 +45,7 @@ export class NoteShareLinkRepository {
     expiresAt?: Date | null
     maxViews?: number | null
     label?: string | null
+    allowGuestComments?: boolean
   }): Promise<NoteShareLink> {
     const now = new Date()
     const id = nanoid()
@@ -59,6 +61,7 @@ export class NoteShareLinkRepository {
       maxViews: input.maxViews ?? null,
       viewCount: 0,
       label: input.label ?? null,
+      allowGuestComments: Boolean(input.allowGuestComments),
       status: 'active',
       lastAccessedAt: null,
       createdAt: now,
@@ -124,6 +127,7 @@ export class NoteShareLinkRepository {
       expiresAt?: Date | null
       maxViews?: number | null
       label?: string | null
+      allowGuestComments?: boolean
       status?: NoteShareLinkStatus
       permission?: NoteShareLinkPermission
     }
@@ -140,6 +144,9 @@ export class NoteShareLinkRepository {
     if (patch.expiresAt !== undefined) updateData.expiresAt = patch.expiresAt
     if (patch.maxViews !== undefined) updateData.maxViews = patch.maxViews
     if (patch.label !== undefined) updateData.label = patch.label
+    if (patch.allowGuestComments !== undefined) {
+      updateData.allowGuestComments = Boolean(patch.allowGuestComments)
+    }
     if (patch.status !== undefined) updateData.status = patch.status
     if (patch.permission !== undefined) updateData.permission = patch.permission
 

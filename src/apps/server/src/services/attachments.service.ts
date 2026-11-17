@@ -368,7 +368,43 @@ export class AttachmentsService {
       }
     }
 
-    const filePath = finalPath(row.homeNoteId, safeId)
+    return this.readAttachmentFile(row)
+  }
+
+  /**
+   * Download an attachment that belongs to a note opened via a public share link.
+   * Access is gated by the caller (valid share-access token + note id).
+   */
+  async downloadForSharedNote(
+    attachmentId: string,
+    noteId: string
+  ): Promise<{ buffer: Buffer; mimeType: string; originalName: string }> {
+    const safeId = sanitizeAttachmentId(attachmentId)
+    if (!safeId) {
+      throw new AttachmentsServiceError('Invalid attachment id', 'NOT_FOUND', 404)
+    }
+
+    const row = await attachmentRepository.findById(safeId)
+    if (!row || row.status !== 'ready') {
+      throw new AttachmentsServiceError('Attachment not found', 'NOT_FOUND', 404)
+    }
+
+    const belongsToNote =
+      row.homeNoteId === noteId || (await noteAttachmentRepository.isLinked(noteId, safeId))
+    if (!belongsToNote) {
+      throw new AttachmentsServiceError('Access denied', 'ACCESS_DENIED', 403)
+    }
+
+    return this.readAttachmentFile(row)
+  }
+
+  private readAttachmentFile(row: {
+    id: string
+    homeNoteId: string
+    mimeType: string
+    originalName: string
+  }): { buffer: Buffer; mimeType: string; originalName: string } {
+    const filePath = finalPath(row.homeNoteId, row.id)
     if (!existsSync(filePath)) {
       throw new AttachmentsServiceError('File not found', 'NOT_FOUND', 404)
     }

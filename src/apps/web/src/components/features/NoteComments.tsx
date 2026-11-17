@@ -46,10 +46,16 @@ function CommentItem({ comment, noteId, isOwner, isReply = false }: CommentItemP
   const [editContent, setEditContent] = useState(comment.content)
   const [replyContent, setReplyContent] = useState('')
 
-  const isAuthor = user?.id === comment.userId
+  const isGuest = Boolean(comment.isGuest)
+  const isAuthor = !isGuest && user?.id === comment.userId
   const canDelete = isAuthor || isOwner
   const isEditing = editingId === comment.id
   const isReplying = replyingTo === comment.id
+  const displayName = isGuest
+    ? t('link_share.guest_author', {
+        name: comment.guestName || comment.user.username || t('comments.guest_badge'),
+      })
+    : comment.user.username
 
   const handleEdit = async () => {
     if (!editContent.trim() || isSubmitting) return
@@ -86,10 +92,15 @@ function CommentItem({ comment, noteId, isOwner, isReply = false }: CommentItemP
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className={`${isReply ? 'text-xs' : 'text-sm'} font-medium text-[var(--color-text-primary)]`}>
-              {comment.user.username}
+              {displayName}
             </span>
+            {isGuest && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]">
+                {t('comments.guest_badge')}
+              </span>
+            )}
             <span className="text-[10px] text-[var(--color-text-tertiary)]">
               {formatRelativeTime(comment.createdAt, i18n.language, t)}
             </span>

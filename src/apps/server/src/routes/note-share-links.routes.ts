@@ -6,6 +6,8 @@ import {
   noteShareLinkService,
   NoteShareLinkServiceError,
 } from '../services/note-share-link.service.js'
+import { commentsService } from '../services/comments.service.js'
+import { attachmentsService } from '../services/attachments.service.js'
 
 const managedRouter: RouterType = Router()
 managedRouter.use(authenticate)
@@ -15,6 +17,7 @@ const createSchema = z.object({
   expiresAt: z.string().nullable().optional(),
   maxViews: z.number().int().min(1).max(1_000_000).nullable().optional(),
   label: z.string().max(120).nullable().optional(),
+  allowGuestComments: z.boolean().optional(),
 })
 
 const updateSchema = z.object({
@@ -23,6 +26,7 @@ const updateSchema = z.object({
   expiresAt: z.string().nullable().optional(),
   maxViews: z.number().int().min(1).max(1_000_000).nullable().optional(),
   label: z.string().max(120).nullable().optional(),
+  allowGuestComments: z.boolean().optional(),
   status: z.enum(['active', 'revoked']).optional(),
 })
 
@@ -103,6 +107,101 @@ publicRouter.post('/:token/open', openRateLimit, async (req, res, next) => {
     next(error)
   }
 })
+
+const guestCommentRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many comments, please try again later' } },
+})
+
+const guestCommentSchema = z.object({
+  accessToken: z.string().min(10),
+  content: z.string().min(1).max(2000),
+  parentId: z.string().optional(),
+  guestName: z.string().max(40).optional(),
+})
+
+publicRouter.get('/:token/comments', async (req, res, next) => {
+  try {
+    const accessToken =
+      (typeof req.query.accessToken === 'string' && req.query.accessToken) ||
+      (typeof req.headers['x-share-access'] === 'string' && req.headers['x-share-access']) ||
+      ''
+    if (!accessToken) {
+      throw new NoteShareLinkServiceError('Share access required', 'SHARE_ACCESS_DENIED', 401)
+    }
+    const link = await noteShareLinkService.requireOpenLink(req.params.token, accessToken)
+    if (!link.allowGuestComments) {
+      throw new NoteShareLinkServiceError('Guest comments are disabled', 'COMMENTS_DISABLED', 403)
+    }
+    const comments = await commentsService.listForPublicShare(link.noteId)
+    res.json({ comments })
+  } catch (error) {
+    next(error)
+  }
+})
+
+publicRouter.post('/:token/comments', guestCommentRateLimit, async (req, res, next) => {
+  try {
+    const body = guestCommentSchema.parse(req.body ?? {})
+    const link = await noteShareLinkService.requireOpenLink(req.params.token, body.accessToken)
+    if (!link.allowGuestComments) {
+      throw new NoteShareLinkServiceError('Guest comments are disabled', 'COMMENTS_DISABLED', 403)
+    }
+    const comment = await commentsService.createGuestComment(
+      link.noteId,
+      link.id,
+      body.content,
+      body.guestName,
+      body.parentId
+    )
+    res.status(201).json({ comment })
+  } catch (error) {
+    next(error)
+  }
+})
+
+const attachmentDownloadRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 120,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'Too many downloads, please try again later' } },
+})
+
+/** Guest download for web-snapshot / note attachments referenced by an opened share link. */
+publicRouter.get(
+  '/:token/attachments/:attachmentId',
+  attachmentDownloadRateLimit,
+  async (req, res, next) => {
+    try {
+      const accessToken =
+        (typeof req.query.accessToken === 'string' && req.query.accessToken) ||
+        (typeof req.headers['x-share-access'] === 'string' && req.headers['x-share-access']) ||
+        ''
+      if (!accessToken) {
+        throw new NoteShareLinkServiceError('Share access required', 'SHARE_ACCESS_DENIED', 401)
+      }
+      const link = await noteShareLinkService.requireOpenLink(req.params.token, accessToken)
+      const { buffer, mimeType, originalName } = await attachmentsService.downloadForSharedNote(
+        req.params.attachmentId,
+        link.noteId
+      )
+      const encodedName = encodeURIComponent(originalName)
+      res.set({
+        'Content-Type': mimeType,
+        'Content-Length': String(buffer.length),
+        'Content-Disposition': `inline; filename*=UTF-8''${encodedName}`,
+        'Cache-Control': 'private, max-age=300',
+      })
+      res.send(buffer)
+    } catch (error) {
+      next(error)
+    }
+  }
+)
 
 export function registerNoteShareLinkErrorHandler(
   err: Error,

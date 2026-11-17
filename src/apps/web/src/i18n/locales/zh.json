@@ -20,7 +20,8 @@
     "no": "否",
     "more_options": "更多选项",
     "retry": "重试",
-    "clear": "清空"
+    "clear": "清空",
+    "refresh": "刷新"
   },
   "sidebar": {
     "notes": "笔记",
@@ -343,7 +344,23 @@
     "guest_revoked": "链接已取消",
     "wrong_password": "密码不正确",
     "countdown": "剩余 {{time}}",
-    "remaining_views": "还可打开 {{count}} 次"
+    "remaining_views": "还可打开 {{count}} 次",
+    "allow_guest_comments": "允许访客匿名评论",
+    "allow_guest_comments_hint": "拿到链接的人可在文末留言；默认关闭。",
+    "guest_comments_on": "可评论",
+    "discussion": "讨论",
+    "discussion_hint": "留言不会写入笔记正文，作者可在笔记评论里看到并回复。",
+    "guest_name_placeholder": "昵称（可选，匿名显示为访客）",
+    "guest_comment_placeholder": "写一条留言…",
+    "guest_author": "访客 · {{name}}",
+    "guest_badge_short": "访客",
+    "replying": "正在回复…",
+    "comments_load_failed": "加载评论失败",
+    "comments_post_failed": "发送失败",
+    "floor": "{{n}} 楼",
+    "op": "楼主",
+    "replies_heading": "回复 · {{count}}",
+    "jump_replies": "查看回复"
   },
   "versions": {
     "title": "版本历史",
@@ -865,7 +882,8 @@
     "edited": "已编辑",
     "delete_confirm": "确定删除这条评论？",
     "empty": "暂无评论",
-    "empty_hint": "第一个在这条笔记下留言吧"
+    "empty_hint": "第一个在这条笔记下留言吧",
+    "guest_badge": "访客"
   },
   "sessions": {
     "title": "活跃会话",

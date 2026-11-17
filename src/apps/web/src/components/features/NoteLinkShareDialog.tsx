@@ -56,6 +56,7 @@ export function NoteLinkShareDialog({
   const [customExpires, setCustomExpires] = useState('')
   const [maxViews, setMaxViews] = useState('')
   const [label, setLabel] = useState('')
+  const [allowGuestComments, setAllowGuestComments] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdPath, setCreatedPath] = useState<string | null>(null)
 
@@ -103,11 +104,13 @@ export function NoteLinkShareDialog({
         expiresAt: expiresAtPayload === undefined ? undefined : expiresAtPayload,
         maxViews: maxViews ? Number(maxViews) : null,
         label: label.trim() || null,
+        allowGuestComments,
       })
       setCreatedPath(link.path)
       setPassword('')
       setLabel('')
       setMaxViews('')
+      setAllowGuestComments(false)
       await load()
       toast.success(t('link_share.created'))
     } catch (err) {
@@ -265,6 +268,21 @@ export function NoteLinkShareDialog({
               />
             </label>
 
+            <label className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={allowGuestComments}
+                onChange={(e) => setAllowGuestComments(e.target.checked)}
+              />
+              <span>
+                {t('link_share.allow_guest_comments')}
+                <span className="block text-[10px] text-[var(--color-text-tertiary)] mt-0.5">
+                  {t('link_share.allow_guest_comments_hint')}
+                </span>
+              </span>
+            </label>
+
             {error && <p className="text-xs text-[var(--color-error)]">{error}</p>}
 
             <button
@@ -330,6 +348,9 @@ export function NoteLinkShareDialog({
                         </p>
                         <p>
                           {link.hasPassword ? t('link_share.with_password') : t('link_share.no_password')}
+                          {link.allowGuestComments
+                            ? ` · ${t('link_share.guest_comments_on')}`
+                            : ''}
                           {' · '}
                           {link.maxViews != null
                             ? t('link_share.views_used', {

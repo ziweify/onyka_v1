@@ -1,6 +1,7 @@
 import { commentRepository } from '../repositories/comment.repository.js'
 import { noteRepository } from '../repositories/note.repository.js'
 import { shareRepository } from '../repositories/share.repository.js'
+import { SHARE_GUEST_USER_ID } from '../db/schema.js'
 import type { CommentWithUser, CommentWithReplies } from '@onyka/shared'
 
 export class CommentsServiceError extends Error {
@@ -68,6 +69,10 @@ export class CommentsService {
       throw new CommentsServiceError('Comment not found', 'COMMENT_NOT_FOUND', 404)
     }
 
+    if (comment.isGuest || comment.userId === SHARE_GUEST_USER_ID) {
+      throw new CommentsServiceError('Guest comments cannot be edited', 'ACCESS_DENIED', 403)
+    }
+
     if (comment.userId !== userId) {
       throw new CommentsServiceError('Access denied', 'ACCESS_DENIED', 403)
     }
@@ -94,7 +99,7 @@ export class CommentsService {
     }
 
     const note = await noteRepository.findById(comment.noteId)
-    const isAuthor = comment.userId === userId
+    const isAuthor = !comment.isGuest && comment.userId === userId
     const isNoteOwner = note?.ownerId === userId
 
     if (!isAuthor && !isNoteOwner) {
@@ -102,6 +107,52 @@ export class CommentsService {
     }
 
     await commentRepository.delete(commentId)
+  }
+
+  /** List comments for a public share page (no user session). */
+  async listForPublicShare(noteId: string): Promise<CommentWithReplies[]> {
+    return commentRepository.findByNoteId(noteId)
+  }
+
+  async createGuestComment(
+    noteId: string,
+    shareLinkId: string,
+    content: string,
+    guestName?: string,
+    parentId?: string
+  ): Promise<CommentWithUser> {
+    const trimmed = content.trim()
+    if (!trimmed) {
+      throw new CommentsServiceError('Comment content cannot be empty', 'EMPTY_CONTENT', 400)
+    }
+    if (trimmed.length > 2000) {
+      throw new CommentsServiceError('Comment too long', 'CONTENT_TOO_LONG', 400)
+    }
+
+    const nick = guestName?.trim().slice(0, 40) || null
+
+    if (parentId) {
+      const parentComment = await commentRepository.findById(parentId)
+      if (!parentComment) {
+        throw new CommentsServiceError('Parent comment not found', 'PARENT_NOT_FOUND', 404)
+      }
+      if (parentComment.noteId !== noteId) {
+        throw new CommentsServiceError('Parent comment belongs to different note', 'INVALID_PARENT', 400)
+      }
+    }
+
+    const comment = await commentRepository.create(
+      noteId,
+      SHARE_GUEST_USER_ID,
+      trimmed,
+      parentId,
+      { guestName: nick, shareLinkId }
+    )
+    const commentWithUser = await commentRepository.findByIdWithUser(comment.id)
+    if (!commentWithUser) {
+      throw new CommentsServiceError('Failed to create comment', 'CREATE_FAILED', 500)
+    }
+    return commentWithUser
   }
 
   private async verifyAccess(

@@ -4,9 +4,20 @@ import { decrypt } from '../utils/crypto.js'
 import { extractAttachmentIds } from '../utils/attachment-refs.js'
 import { attachmentRepository } from './attachment.repository.js'
 
-const { notes, notePages } = schema
+const { notes, notePages, noteAttachments } = schema
 
 export class NoteAttachmentRepository {
+  async isLinked(noteId: string, attachmentId: string): Promise<boolean> {
+    const rows = await db
+      .select({ noteId: noteAttachments.noteId })
+      .from(noteAttachments)
+      .where(
+        and(eq(noteAttachments.noteId, noteId), eq(noteAttachments.attachmentId, attachmentId))
+      )
+      .limit(1)
+    return Boolean(rows[0])
+  }
+
   async syncFromNoteContent(noteId: string, noteContent: string): Promise<void> {
     const ids = new Set(extractAttachmentIds(noteContent))
 

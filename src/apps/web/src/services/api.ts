@@ -542,6 +542,32 @@ export const shareLinksApi = {
     })
     return handleResponse<{ content: PublicShareContent; accessToken: string }>(res)
   },
+
+  listPublicComments: async (token: string, accessToken: string) => {
+    const qs = new URLSearchParams({ accessToken })
+    const res = await fetch(
+      `${API_BASE}/public/share-links/${encodeURIComponent(token)}/comments?${qs}`,
+      { credentials: 'include' }
+    )
+    return handleResponse<{ comments: import('@onyka/shared').CommentWithReplies[] }>(res)
+  },
+
+  postPublicComment: async (
+    token: string,
+    accessToken: string,
+    data: { content: string; parentId?: string; guestName?: string }
+  ) => {
+    const res = await fetch(
+      `${API_BASE}/public/share-links/${encodeURIComponent(token)}/comments`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accessToken, ...data }),
+      }
+    )
+    return handleResponse<{ comment: import('@onyka/shared').CommentWithUser }>(res)
+  },
 }
 
 export interface UserSearchResult {
@@ -1039,6 +1065,12 @@ export const attachmentsApi = {
 
   downloadUrl: (attachmentId: string) =>
     `${API_BASE}/attachments/${attachmentId}/download`,
+
+  /** Guest download via an opened share link (accessToken required). */
+  publicShareDownloadUrl: (token: string, attachmentId: string, accessToken: string) => {
+    const qs = new URLSearchParams({ accessToken })
+    return `${API_BASE}/public/share-links/${encodeURIComponent(token)}/attachments/${encodeURIComponent(attachmentId)}?${qs}`
+  },
 
   copyLink: (attachmentId: string) => `onyka://attachment/${attachmentId}`,
 }

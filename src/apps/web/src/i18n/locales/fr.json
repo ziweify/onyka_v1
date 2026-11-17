@@ -20,7 +20,8 @@
     "no": "Non",
     "more_options": "Plus d'options",
     "retry": "Réessayer",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "refresh": "Actualiser"
   },
   "sidebar": {
     "notes": "Notes",
@@ -341,7 +342,23 @@
     "guest_revoked": "Lien révoqué",
     "wrong_password": "Mot de passe incorrect",
     "countdown": "{{time}} restant",
-    "remaining_views": "{{count}} ouvertures restantes"
+    "remaining_views": "{{count}} ouvertures restantes",
+    "allow_guest_comments": "Autoriser les commentaires anonymes",
+    "allow_guest_comments_hint": "Les visiteurs du lien peuvent laisser un message en bas. Désactivé par défaut.",
+    "guest_comments_on": "Commentaires",
+    "discussion": "Discussion",
+    "discussion_hint": "Les commentaires ne modifient pas la note. L’auteur les voit dans le panneau de commentaires.",
+    "guest_name_placeholder": "Pseudo (optionnel)",
+    "guest_comment_placeholder": "Écrire un commentaire…",
+    "guest_author": "Invité · {{name}}",
+    "guest_badge_short": "Invité",
+    "replying": "Réponse…",
+    "comments_load_failed": "Impossible de charger les commentaires",
+    "comments_post_failed": "Échec de l’envoi",
+    "floor": "n°{{n}}",
+    "op": "Auteur",
+    "replies_heading": "Réponses · {{count}}",
+    "jump_replies": "Voir les réponses"
   },
   "versions": {
     "title": "Historique des versions",
@@ -863,7 +880,8 @@
     "edited": "modifié",
     "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce commentaire ?",
     "empty": "Aucun commentaire",
-    "empty_hint": "Soyez le premier à commenter cette note"
+    "empty_hint": "Soyez le premier à commenter cette note",
+    "guest_badge": "Invité"
   },
   "sessions": {
     "title": "Sessions actives",
